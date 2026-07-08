@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from 'react';
-import { StyleSheet, Text, View, TextInput, TouchableOpacity, SafeAreaView, ScrollView, Alert } from 'react-native';
+import { FontAwesome, Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import React, { useEffect, useState } from 'react';
+import { Alert, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { supabase } from '../../../src/config/supabaseClient';
-import { Ionicons, FontAwesome } from '@expo/vector-icons';
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -20,6 +20,7 @@ export default function ProfileScreen() {
   }, []);
 
   const fetchWallet = async (userId: string) => {
+    // 🛠️ CORRECTION : Le mot 'conimpst' a été purifié en 'const' propre
     const { data } = await supabase.from('wallets').select('balance_fcfa').eq('user_id', userId).single();
     if (data) setWalletBalance(data.balance_fcfa);
   };
@@ -78,18 +79,12 @@ export default function ProfileScreen() {
         <View style={styles.menuGroup}>
           {renderItem("cube-outline", "Mes commandes", "/(client)/orders")}
           {renderItem("mail-outline", "Boîte de réception", "/chat")}
-          
-          {/* Actif vers ton nouvel écran d'avis 🟢 */}
           {renderItem("document-text-outline", "Notes et avis", "/(client)/reviews-history", false)}
-          
-          {/* Actif vers ton nouvel écran de bons d'achat 🟢 */}
           {renderItem("star-outline", "Bons d'achat", "/(client)/vouchers", false)}
-          
           {renderItem("heart-outline", "Favoris", "/favorites")}
           {renderItem("storefront-outline", "Vendeurs suivis", "", true)}
           {renderItem("time-outline", "Consultés récemment", "", true)}
         </View>
-
 
         <Text style={styles.sectionTitle}>Mes paramètres</Text>
         <View style={styles.menuGroup}>
@@ -99,16 +94,31 @@ export default function ProfileScreen() {
           {renderItem("shield-checkmark-outline", "Politique de Confidentialité", "/(client)/about")}
         </View>
 
+        {/* 🕵️‍♂️ RADAR SECRET DE JACKY SUPERADMIN TOTALEMENT INTÉGRÉ ICI : */}
+        <Text style={styles.sectionTitle}>Administration Privée</Text>
+        <View style={{ paddingHorizontal: 16, paddingVertical: 10, backgroundColor: '#fff' }}>
+          <TouchableOpacity 
+            style={styles.btnSecretAdmin}
+            onPress={() => router.push('/(admin)/superadmin')}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.btnSecretText}>⚙️ Ouvrir le QG Mobile Jacky</Text>
+          </TouchableOpacity>
+        </View>
+
         {!userEmail && (
           <View style={styles.footerInviteBlock}>
-            <TouchableOpacity onPress={() => router.push('/(auth)/login')}><Text style={styles.footerInviteTxt}>Connectez-vous</Text></TouchableOpacity>
+            <TouchableOpacity onPress={() => router.push('/(auth)/login')}>
+              <Text style={styles.footerInviteTxt}>Connectez-vous</Text>
+            </TouchableOpacity>
           </View>
         )}
+        
         <View style={{height: 30}} />
       </ScrollView>
     </SafeAreaView>
   );
-}
+} 
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f2f2f2' },
@@ -132,5 +142,20 @@ const styles = StyleSheet.create({
   menuItem: { flexDirection: 'row', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderColor: '#f2f2f2' },
   menuItemTxt: { flex: 1, fontSize: 15, color: '#212529' },
   footerInviteBlock: { paddingVertical: 35, alignItems: 'center', justifyContent: 'center' },
-  footerInviteTxt: { color: '#f57c00', fontSize: 15, fontWeight: '600', textDecorationLine: 'underline' }
+  footerInviteTxt: { color: '#f57c00', fontSize: 15, fontWeight: '600', textDecorationLine: 'underline' },
+  
+  // Styles chirurgicaux pour le bouton SuperAdmin noir et orange
+  btnSecretAdmin: { 
+    backgroundColor: '#111417', 
+    padding: 16, 
+    borderRadius: 8, 
+    borderLeftWidth: 5, 
+    borderLeftColor: '#f57c00',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3
+  },
+  btnSecretText: { color: '#fff', fontWeight: 'bold', fontSize: 14, textAlign: 'center' }
 });
