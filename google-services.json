@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "60149125286",
+    "project_id": "monreseausocialv2",
+    "storage_bucket": "monreseausocialv2.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:60149125286:android:93dea10b58d06c75eba467",
+        "android_client_info": {
+          "package_name": "com.jacky.monreseausocialv2"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD_TmACduyoIs_qIiYiTr0lZPTZBL40rwo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
