@@ -85,7 +85,7 @@ export default function ProductDetailScreen() {
     if (!product) return;
     try {
       setPaying(true);
-      const response = await fetch('https://jula-web.onrender.com', {
+      const response = await fetch('https://onrender.com', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ product_title: product.title, price: product.price })
