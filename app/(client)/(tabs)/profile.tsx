@@ -20,7 +20,7 @@ export default function ProfileScreen() {
   }, []);
 
   const fetchWallet = async (userId: string) => {
-    // 🛠️ CORRECTION : Le mot 'conimpst' a été purifié en 'const' propre
+    // 🛠️ NETTOYAGE : 'conimpst' a été définitivement corrigé en 'const'
     const { data } = await supabase.from('wallets').select('balance_fcfa').eq('user_id', userId).single();
     if (data) setWalletBalance(data.balance_fcfa);
   };
@@ -94,7 +94,7 @@ export default function ProfileScreen() {
           {renderItem("shield-checkmark-outline", "Politique de Confidentialité", "/(client)/about")}
         </View>
 
-        {/* 🕵️‍♂️ RADAR SECRET DE JACKY SUPERADMIN TOTALEMENT INTÉGRÉ ICI : */}
+        {/* 🕵️‍♂️ LE BOUTON SECRET MOBILE DE JACKY ADAPTÉ AU PACK : */}
         <Text style={styles.sectionTitle}>Administration Privée</Text>
         <View style={{ paddingHorizontal: 16, paddingVertical: 10, backgroundColor: '#fff' }}>
           <TouchableOpacity 
@@ -143,8 +143,6 @@ const styles = StyleSheet.create({
   menuItemTxt: { flex: 1, fontSize: 15, color: '#212529' },
   footerInviteBlock: { paddingVertical: 35, alignItems: 'center', justifyContent: 'center' },
   footerInviteTxt: { color: '#f57c00', fontSize: 15, fontWeight: '600', textDecorationLine: 'underline' },
-  
-  // Styles chirurgicaux pour le bouton SuperAdmin noir et orange
   btnSecretAdmin: { 
     backgroundColor: '#111417', 
     padding: 16, 
