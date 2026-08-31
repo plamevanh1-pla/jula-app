@@ -1,8 +1,28 @@
 import { Tabs } from 'expo-router';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Text } from 'react-native';
+// 🟢 IMPORTATION DU COMPOSANT CENTRAL DE SÉCURITÉ SUPABASE
+import { supabase } from '../../../src/config/supabaseClient';
 
 export default function TabsLayout() {
+
+  // 📡 MONITEUR DE SÉCURITÉ JULA : VERROUILLE L'UTILISATEUR CONNECTÉ DANS LE TÉLÉPHONE
+  useEffect(() => {
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_IN' && session) {
+        console.log("🔒 Session Jula active et verrouillée pour :", session.user.email);
+      } else if (event === 'SIGNED_OUT' || !session) {
+        console.log("👤 Mode Invité / Déconnecté");
+      }
+    });
+
+    return () => {
+      if (authListener && authListener.subscription) {
+        authListener.subscription.unsubscribe();
+      }
+    };
+  }, []);
+
   return (
     <Tabs
       screenOptions={{

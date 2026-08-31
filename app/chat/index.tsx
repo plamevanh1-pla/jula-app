@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import React from 'react';
 import { SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 export default function ChatListScreen() {
@@ -7,6 +8,7 @@ export default function ChatListScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      {/* BARRE SUPÉRIEURE DE NAVIGATION */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color="#f57c00" />
@@ -16,10 +18,13 @@ export default function ChatListScreen() {
       </View>
 
       <View style={styles.content}>
-        {/* Ligne de discussion qui pointe vers ton fichier [id].tsx */}
+        {/* 🟢 ROUTE CORRIGÉE ET SÉCURISÉE AVEC LES PARAMÈTRES POUR ÉVITER LE GEL DE L'ÉCRAN */}
         <TouchableOpacity 
           style={styles.chatRow} 
-          onPress={() => router.push('/chat/8c9c1b7a-5b12-4c8d-9a3f-123456789abc')}
+          onPress={() => router.push({
+            pathname: '/chat/[id]',
+            params: { id: 'support-logistique' }
+          })}
         >
           <View style={styles.avatar}>
             <Text style={styles.avatarTxt}>👨‍💻</Text>
@@ -37,7 +42,7 @@ export default function ChatListScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
-  header: { flexDirection: 'row', justifyContent: 'space-between', padding: 16, borderBottomWidth: 1, borderColor: '#dee2e6', alignItems: 'center' },
+  header: { flexDirection: 'row', justifyContent: 'space-between', padding: 16, borderBottomWidth: 1, borderColor: '#dee2e6', alignItems: 'center', paddingTop: 40 },
   title: { fontSize: 18, fontWeight: 'bold', color: '#212529' },
   content: { padding: 16 },
   chatRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderColor: '#f1f3f5' },

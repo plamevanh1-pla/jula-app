@@ -1,8 +1,8 @@
- import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, TextInput, TouchableOpacity, SafeAreaView, ScrollView, Image, ActivityIndicator, Linking } from 'react-native';
-import { useRouter } from 'expo-router';
-import { supabase } from '../../../src/config/supabaseClient';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, Image, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { supabase } from '../../../src/config/supabaseClient';
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -11,13 +11,18 @@ export default function HomeScreen() {
   const [search, setSearch] = useState('');
   const [ad, setAd] = useState<any>(null);
 
+  // 🎛️ ÉTATS DES FILTRES BUDGET AVANCÉS
+  const [maxPrice, setMaxPrice] = useState<string>('');
+  const [selectedCategoryKeyword, setSelectedCategoryKeyword] = useState<string>('');
+
   const topCategories = [
-    { id: '1', title: '📱 Téléphones' },
-    { id: '2', title: '💻 Informatique' },
-    { id: '3', title: '🎮 Jeux Vidéo' },
-    { id: '4', title: '🚗 Véhicules' },
-    { id: '5', title: '⚽ Sport' },
-    { id: '6', title: '🔌 Électronique' }
+    { id: '0', title: '🔄 Tout Voir', keyword: '' },
+    { id: '1', title: '📱 Téléphones', keyword: 'phone' },
+    { id: '2', title: '💻 Informatique', keyword: 'ordinateur' },
+    { id: '3', title: '🎮 Jeux Vidéo', keyword: 'console' },
+    { id: '4', title: '🚗 Véhicules', keyword: 'voiture' },
+    { id: '5', title: '⚽ Sport', keyword: 'sport' },
+    { id: '6', title: '🔌 Électronique', keyword: 'elect' }
   ];
 
   useEffect(() => {
@@ -55,24 +60,44 @@ export default function HomeScreen() {
     }
   };
 
+   // 🛑 SÉCURITÉ JULA : DÉSACTIVATION DU CLIC SORTANT SUR LA PUBLICITÉ
   const handleAdPress = () => {
-    if (ad && ad.redirect_url) {
-      Linking.openURL(ad.redirect_url).catch(err => console.error("Erreur:", err));
-    }
-  };
-
+  // Le clic ne lance plus de site externe, le client reste à 100% dans l'application Jula !
+  console.log("Publicité purement visuelle. Redirection bloquée par l'administrateur.");
+};
+  // 🎛️ FILTRAGE INTERNE PAR CATÉGORIE ET PAR PRIX MAXIMAL
   const getProductsByCategory = (categoryKeyword: string) => {
-    return products.filter(p => 
-      p.category?.toLowerCase().includes(categoryKeyword.toLowerCase()) ||
-      p.title?.toLowerCase().includes(categoryKeyword.toLowerCase())
-    );
+    return products.filter(p => {
+      const matchesCategory = p.category?.toLowerCase().includes(categoryKeyword.toLowerCase()) ||
+                            p.title?.toLowerCase().includes(categoryKeyword.toLowerCase());
+      
+      const priceLimit = parseFloat(maxPrice);
+      const matchesPrice = !isNaN(priceLimit) ? (p.promo_price || p.price) <= priceLimit : true;
+
+      return matchesCategory && matchesPrice;
+    });
   };
 
-  const searchedProducts = products.filter(p => 
-    p.title?.toLowerCase().includes(search.toLowerCase())
-  );
+  // Moteur de recherche global + filtre de budget
+  const searchedProducts = products.filter(p => {
+    const matchesSearch = p.title?.toLowerCase().includes(search.toLowerCase());
+    
+    const priceLimit = parseFloat(maxPrice);
+    const matchesPrice = !isNaN(priceLimit) ? (p.promo_price || p.price) <= priceLimit : true;
+
+    const matchesCategory = selectedCategoryKeyword !== '' ? (
+      p.category?.toLowerCase().includes(selectedCategoryKeyword.toLowerCase()) ||
+      p.title?.toLowerCase().includes(selectedCategoryKeyword.toLowerCase())
+    ) : true;
+
+    return matchesSearch && matchesPrice && matchesCategory;
+  });
 
   const renderProductRow = (title: string, categoryKeyword: string, backgroundColor: string) => {
+    if (selectedCategoryKeyword !== '' && !categoryKeyword.toLowerCase().includes(selectedCategoryKeyword.toLowerCase())) {
+      return null;
+    }
+
     const list = getProductsByCategory(categoryKeyword);
     if (list.length === 0) return null;
 
@@ -85,25 +110,34 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </View>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalProductScroll}>
-          {list.map((item) => (
-            <TouchableOpacity key={item.id} style={styles.productCardHorizontal} onPress={() => router.push(`/product/${item.id}`)}>
-              <Image 
-                source={{ uri: item.image_url || 'https://unsplash.com' }} 
-                style={styles.productImgHorizontal} 
-              />
-              <View style={styles.productInfoHorizontal}>
-                <Text style={styles.prodTitleHorizontal} numberOfLines={1}>{item.title}</Text>
-                <Text style={styles.prodPriceHorizontal}>{item.price} FCFA</Text>
-              </View>
-            </TouchableOpacity>
-          ))}
+          {list.map((item) => {
+            // Moteur de calcul interne de la remise pour les lignes horizontales
+            let remiseRow = 0;
+            if (item.price && item.promo_price && item.price > item.promo_price) {
+              remiseRow = Math.round(((item.price - item.promo_price) / item.price) * 100);
+            }
+            return (
+              <TouchableOpacity key={item.id} style={styles.productCardHorizontal} onPress={() => router.push(`/product/${item.id}`)}>
+                <View style={{ position: 'relative' }}>
+                  <Image source={{ uri: item.image_url || 'https://unsplash.com' }} style={styles.productImgHorizontal} />
+                  {remiseRow > 0 && (
+                    <View style={styles.miniPromoBadge}><Text style={styles.miniPromoBadgeText}>-{remiseRow}%</Text></View>
+                  )}
+                </View>
+                <View style={styles.productInfoHorizontal}>
+                  <Text style={styles.prodTitleHorizontal} numberOfLines={1}>{item.title}</Text>
+                  <Text style={styles.prodPriceHorizontal}>{(item.promo_price || item.price).toLocaleString('fr-FR')} F</Text>
+                </View>
+              </TouchableOpacity>
+            );
+          })}
         </ScrollView>
       </View>
     );
   };
-
   return (
     <SafeAreaView style={styles.container}>
+      {/* 🔍 BARRE DE RECHERCHE UNIFORME JULA */}
       <View style={styles.searchBarContainer}>
         <View style={styles.searchField}>
           <Ionicons name="search-outline" size={20} color="#6c757d" />
@@ -119,16 +153,34 @@ export default function HomeScreen() {
         </TouchableOpacity>
       </View>
 
+      {/* 🎛️ COFFRET DES FILTRES DE BUDGET CLIENT */}
+      <View style={styles.filterBudgetBox}>
+        <Ionicons name="funnel-outline" size={16} color="#f57c00" style={{ marginRight: 6 }} />
+        <Text style={{ fontSize: 13, color: '#495057', fontWeight: '600', marginRight: 10 }}>Budget max :</Text>
+        <TextInput
+          style={styles.budgetInput}
+          placeholder="Ex: 50000"
+          placeholderTextColor="#adb5bd"
+          keyboardType="numeric"
+          value={maxPrice}
+          onChangeText={setMaxPrice}
+        />
+        <Text style={{ fontSize: 13, color: '#f57c00', fontWeight: 'bold', marginLeft: 6 }}>FCFA</Text>
+      </View>
+
+      {/* 🔄 SCROLLVIEW DE PRODUCTION PRINCIPAL JULA */}
       <ScrollView showsVerticalScrollIndicator={false}>
+        
+        {/* BANNIÈRE DE BIENVENUE */}
         <View style={styles.banner}>
           <Text style={styles.bannerTitle}>🎉 Jula E-Commerce</Text>
           <Text style={styles.bannerSub}>Réseau interconnecté • 4 Pays de la Zone CFA</Text>
         </View>
 
+        {/* 🏬 ZONE PUBLICITAIRE DYNAMIQUE SUPABASE */}
         {ad && (
           <TouchableOpacity style={styles.adBannerContainer} onPress={handleAdPress}>
             <Image source={{ uri: ad.image_url }} style={styles.adBannerImage} />
-            <View style={styles.adBannerBadge}><Text style={styles.adBannerBadgeText}>Sponsorisé</Text></View>
             <View style={styles.adBannerFooter}>
               <Text style={styles.adBannerTitle} numberOfLines={1}>{ad.title}</Text>
               <Text style={styles.adBannerAction}>Devenir Partenaire ➔</Text>
@@ -136,77 +188,180 @@ export default function HomeScreen() {
           </TouchableOpacity>
         )}
 
+        {/* 🎛️ LES BADGES HORIZONTAUX DE CATÉGORIES POPULAIRES (STYLE ALIEXPRESS) */}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.topCategoriesScroll}>
-          {topCategories.map((cat) => (
-            <TouchableOpacity key={cat.id} style={styles.topCatBadge} onPress={() => router.push('/(client)/categories')}>
-              <Text style={styles.topCatText}>{cat.title}</Text>
-            </TouchableOpacity>
-          ))}
+          {topCategories.map((cat) => {
+            const isSelected = selectedCategoryKeyword === cat.keyword;
+            return (
+              <TouchableOpacity 
+                key={cat.id} 
+                style={[styles.topCatBadge, isSelected ? { backgroundColor: '#f57c00', borderColor: '#f57c00' } : null]} 
+                onPress={() => setSelectedCategoryKeyword(cat.keyword)}
+              >
+                <Text style={[styles.topCatText, isSelected ? { color: '#fff', fontWeight: 'bold' } : null]}>{cat.title}</Text>
+              </TouchableOpacity>
+            );
+          })}
         </ScrollView>
 
+        {/* ⚡ LOGIQUE CHIRURGICALE DE TRIS ET D'AFFICHAGE DU CATALOGUE */}
         {loading ? (
           <ActivityIndicator size="large" color="#f57c00" style={{ marginTop: 40 }} />
-        ) : search.length > 0 ? (
+        ) : (search.length > 0 || maxPrice.length > 0 || selectedCategoryKeyword !== '') ? (
+          
+          /* 📋 AFFICHAGE DES RÉSULTATS RECHERCHÉS OU FILTRÉS PAR LE CLIENT */
           <View style={styles.searchResultsContainer}>
-            <Text style={styles.searchResultsTitle}>Résultats ({searchedProducts.length})</Text>
-            <View style={styles.gridContainer}>
-              {searchedProducts.map(item => (
-                <TouchableOpacity key={item.id} style={styles.gridCard} onPress={() => router.push(`/product/${item.id}`)}>
-                  <Image source={{ uri: item.image_url || 'https://unsplash.com' }} style={styles.gridImg} />
-                  <Text style={styles.gridTitle} numberOfLines={1}>{item.title}</Text>
-                  <Text style={styles.gridPrice}>{item.price} FCFA</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
+            <Text style={styles.searchResultsTitle}>Articles correspondants ({searchedProducts.length})</Text>
+            {searchedProducts.length === 0 ? (
+              <Text style={styles.noResultsTxt}>❌ Aucun article ne correspond à vos filtres.</Text>
+            ) : (
+              <View style={styles.jumiaGrid}>
+                {searchedProducts.map(item => {
+                  let remiseGrid = 0;
+                  if (item.price && item.promo_price && item.price > item.promo_price) {
+                    remiseGrid = Math.round(((item.price - item.promo_price) / item.price) * 100);
+                  }
+                  return (
+                    <TouchableOpacity key={item.id} style={styles.jumiaCard} onPress={() => router.push(`/product/${item.id}`)}>
+                      <View style={styles.imageContainer}>
+                        <Image source={{ uri: item.image_url }} style={styles.jumiaProductImg} />
+                        {remiseGrid > 0 && (
+                          <View style={styles.jumiaPromoBadge}><Text style={styles.jumiaPromoBadgeText}>-{remiseGrid}%</Text></View>
+                        )}
+                      </View>
+                      <View style={styles.jumiaInfoBlock}>
+                        <Text style={styles.jumiaProductTitle} numberOfLines={2}>{item.title}</Text>
+                        <Text style={styles.jumiaCurrentPrice}>{(item.promo_price || item.price).toLocaleString('fr-FR')} FCFA</Text>
+                      </View>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            )}
           </View>
         ) : (
-          <View style={{ marginBottom: 30 }}>
-            {renderProductRow("📱 Smartphones & Tablettes", "phone", "#1072ba")}
-            {renderProductRow("🔥 Offres Phares du Moment", "iphone", "#f57c00")}
-            {renderProductRow("🎮 Jeux Vidéo & Consoles", "console", "#1072ba")}
-            {renderProductRow("🚗 Véhicules & Camions", "voiture", "#212529")}
-            {renderProductRow("⚽ Articles de Sport", "sport", "#00a86b")}
-            {renderProductRow("💻 Matériels Informatiques", "ordinateur", "#1072ba")}
+          
+          /* 🔥 AFFICHAGE STANDARD DE PRODUCTION FINALE JULA : LES RAYONS EN GRILLE INTERACTIVE */
+          <View style={{ marginBottom: 15 }}>
+            
+            <Text style={styles.globalCatalogLabel}>🔥 Grand Catalogue des Grossistes en Direct</Text>
+            
+            <View style={styles.jumiaGrid}>
+              {products.map((item) => {
+                // 📈 1. CALCUL DU POURCENTAGE DE RÉDUCTION REEL EN PRODUCTION
+                let pourcentageRemise = 0;
+                if (item.price && item.promo_price && item.price > item.promo_price) {
+                  pourcentageRemise = Math.round(((item.price - item.promo_price) / item.price) * 100);
+                }
+
+                // 📉 2. JAUGE DE STOCKS EN COULEUR
+                const stockMaximumSimule = 50;
+                const pourcentageBarreStock = Math.min((item.stock_quantity / stockMaximumSimule) * 100, 100);
+                let couleurBarre = '#2e7d32'; 
+                if (item.stock_quantity <= 5) couleurBarre = '#d32f2f'; 
+                else if (item.stock_quantity <= 15) couleurBarre = '#f57c00'; 
+
+                return (
+                  <TouchableOpacity key={item.id} style={styles.jumiaCard} onPress={() => router.push(`/product/${item.id}`)}>
+                    {/* CONTENEUR DE L'IMAGE ISOLE : Le badge s'ancre proprement au-dessus de la photo sans casser le titre ! */}
+                    <View style={styles.imageContainer}>
+                      <Image source={{ uri: item.image_url }} style={styles.jumiaProductImg} />
+                      {pourcentageRemise > 0 && (
+                        <View style={styles.jumiaPromoBadge}>
+                          <Text style={styles.jumiaPromoBadgeText}>-{pourcentageRemise}%</Text>
+                        </View>
+                      )}
+                    </View>
+                    
+                    {/* ZONE DE TEXTE CLAIRE ET ORGANISEE VERTICALEMENT */}
+                    <View style={styles.jumiaInfoBlock}>
+                      <Text style={styles.jumiaProductTitle} numberOfLines={2}>{item.title}</Text>
+                      
+                      {pourcentageRemise > 0 ? (
+                        <View style={styles.jumiaPriceRow}>
+                          <Text style={styles.jumiaCurrentPrice}>{item.promo_price?.toLocaleString('fr-FR')} FCFA</Text>
+                          <Text style={styles.jumiaOldPrice}>{item.price.toLocaleString('fr-FR')} FCFA</Text>
+                        </View>
+                      ) : (
+                        <Text style={styles.jumiaCurrentPrice}>{item.price.toLocaleString('fr-FR')} FCFA</Text>
+                      )}
+
+                      {/* BARRE DE PROGRESSION DU STOCK EN COULEUR */}
+                      <View style={styles.stockSection}>
+                        <Text style={styles.stockCountText}>⚡ {item.stock_quantity || 10} restants</Text>
+                        <View style={styles.progressBarBackground}>
+                          <View style={[styles.progressBarFill, { width: `${pourcentageBarreStock}%`, backgroundColor: couleurBarre }]} />
+                        </View>
+                      </View>
+
+                      <Text style={styles.jumiaCategoryBadge}>📦 {item.category}</Text>
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+
+            {/* Insertion propre de tes sous-bandeaux de défilement horizontaux */}
+            {renderProductRow("📱 Écrans Connectés", "phone", "#1072ba")}
+            {renderProductRow("🔥 Offres Phares Jula", "iphone", "#f57c00")}
+            {renderProductRow("💻 Parcs Informatiques", "ordinateur", "#1072ba")}
           </View>
         )}
       </ScrollView>
     </SafeAreaView>
   );
 }
+
+// 🎨 FEUILLE DE DESIGN COMPLETE ET PROTOCOLEE POUR EFFACER LE CHEVAUCHEMENT
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f4f4f6' },
   searchBarContainer: { flexDirection: 'row', alignItems: 'center', padding: 12, backgroundColor: '#fff', borderBottomWidth: 1, borderColor: '#e9ecef', gap: 12, paddingTop: 40 },
   searchField: { flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: '#f1f3f5', borderRadius: 25, paddingHorizontal: 16, gap: 10, height: 45 },
   searchInput: { flex: 1, fontSize: 14, color: '#212529' },
   cartIconBtn: { padding: 4 },
-  banner: { backgroundColor: '#1072ba', margin: 16, marginBottom: 8, padding: 16, borderRadius: 10 },
-  bannerTitle: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
-  bannerSub: { color: '#fff', fontSize: 12, marginTop: 4, opacity: 0.95 },
-  adBannerContainer: { margin: 16, marginTop: 8, borderRadius: 12, overflow: 'hidden', backgroundColor: '#fff', borderWidth: 1, borderColor: '#e2e8f0', elevation: 3, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4 },
+  filterBudgetBox: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', paddingHorizontal: 16, paddingVertical: 10, borderBottomWidth: 1, borderColor: '#e9ecef' },
+  budgetInput: { backgroundColor: '#f1f3f5', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4, width: 110, fontSize: 13, color: '#212529', fontWeight: 'bold', borderWidth: 1, borderColor: '#ced4da', height: 32 },
+  banner: { backgroundColor: '#fff', padding: 16, borderBottomWidth: 1, borderColor: '#eee' },
+  bannerTitle: { fontSize: 18, fontWeight: 'bold', color: '#f57c00' },
+  bannerSub: { fontSize: 11, color: '#6c757d', marginTop: 2 },
+  topCategoriesScroll: { paddingHorizontal: 16, paddingVertical: 12, backgroundColor: '#fff', gap: 8 },
+  topCatBadge: { paddingVertical: 6, paddingHorizontal: 14, borderRadius: 15, backgroundColor: '#f1f3f5', borderWidth: 1, borderColor: '#e9ecef' },
+  topCatText: { fontSize: 12, color: '#495057' },
+  globalCatalogLabel: { fontSize: 13, fontWeight: 'bold', color: '#212529', marginHorizontal: 16, marginTop: 15, marginBottom: 5, textTransform: 'uppercase', letterSpacing: 0.5 },
+  jumiaGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', paddingHorizontal: 16, marginTop: 5 },
+  jumiaCard: { width: '48%', backgroundColor: '#fff', borderRadius: 8, marginBottom: 15, overflow: 'hidden', borderWidth: 1, borderColor: '#eee', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 1 },
+  imageContainer: { position: 'relative', width: '100%', height: 140, backgroundColor: '#f8f9fa' },
+  jumiaProductImg: { width: '100%', height: '100%', resizeMode: 'cover' },
+  jumiaPromoBadge: { position: 'absolute', top: 8, left: 8, backgroundColor: '#f57c00', paddingVertical: 2, paddingHorizontal: 6, borderRadius: 4, zIndex: 10 },
+  jumiaPromoBadgeText: { color: '#fff', fontSize: 10, fontWeight: 'bold' },
+  jumiaInfoBlock: { padding: 10 },
+  jumiaProductTitle: { fontSize: 13, fontWeight: '500', color: '#212529', height: 36, lineHeight: 18, marginBottom: 4 },
+  jumiaPriceRow: { marginVertical: 2 },
+  jumiaCurrentPrice: { fontSize: 14, fontWeight: 'bold', color: '#f57c00' },
+  jumiaOldPrice: { fontSize: 11, color: '#999', textDecorationLine: 'line-through', marginTop: 1 },
+  stockSection: { marginVertical: 6 },
+  stockCountText: { fontSize: 10, fontWeight: '600', color: '#555', marginBottom: 3 },
+  progressBarBackground: { width: '100%', height: 5, backgroundColor: '#e0e0e0', borderRadius: 3, overflow: 'hidden' },
+  progressBarFill: { height: '100%', borderRadius: 3 },
+  jumiaCategoryBadge: { fontSize: 9, color: '#495057', backgroundColor: '#e9ecef', paddingVertical: 2, paddingHorizontal: 6, borderRadius: 4, alignSelf: 'flex-start', marginTop: 4 },
+  adBannerContainer: { margin: 16, backgroundColor: '#fff', borderRadius: 8, overflow: 'hidden', borderWidth: 1, borderColor: '#eee' },
   adBannerImage: { width: '100%', height: 130, resizeMode: 'cover' },
-  adBannerBadge: { position: 'absolute', top: 10, right: 10, backgroundColor: 'rgba(0,0,0,0.6)', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 4 },
-  adBannerBadgeText: { color: '#fff', fontSize: 10, fontWeight: 'bold' },
-  adBannerFooter: { padding: 12, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#fff' },
-  adBannerTitle: { fontSize: 14, fontWeight: 'bold', color: '#1a1d20', flex: 1, marginRight: 10 },
-  adBannerAction: { fontSize: 12, fontWeight: 'bold', color: '#f57c00' },
-  topCategoriesScroll: { paddingHorizontal: 16, gap: 8, paddingVertical: 12 },
-  topCatBadge: { backgroundColor: '#fff', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, borderWidth: 1, borderColor: '#dee2e6' },
-  topCatText: { fontSize: 12, fontWeight: 'bold', color: '#495057' },
-  sectionContainer: { marginBottom: 14, backgroundColor: '#fff', paddingBottom: 10 },
-  sectionHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 14, paddingVertical: 12 },
-  sectionTitle: { color: '#fff', fontSize: 14, fontWeight: 'bold', textTransform: 'uppercase' },
-  seeAllText: { color: '#fff', fontSize: 13, fontWeight: 'bold' },
-  horizontalProductScroll: { paddingHorizontal: 14, gap: 12, paddingTop: 10 },
-  productCardHorizontal: { backgroundColor: '#fff', width: 140, borderRadius: 6, overflow: 'hidden', borderWidth: 1, borderColor: '#f1f3f5' },
-  productImgHorizontal: { width: '100%', height: 110, resizeMode: 'cover' },
-  productInfoHorizontal: { padding: 8 },
-  prodTitleHorizontal: { fontSize: 12, color: '#212529', fontWeight: '500' },
-  prodPriceHorizontal: { fontSize: 13, color: '#f57c00', fontWeight: 'bold', marginTop: 4 },
-  searchResultsContainer: { padding: 16 },
-  searchResultsTitle: { fontSize: 15, fontWeight: 'bold', color: '#495057', marginBottom: 12 },
-  gridContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
-  gridCard: { backgroundColor: '#fff', width: '48%', borderRadius: 8, padding: 8, borderWidth: 1, borderColor: '#e9ecef' },
-  gridImg: { width: '100%', height: 140, borderRadius: 6, resizeMode: 'cover' },
-  gridTitle: { fontSize: 13, fontWeight: '500', color: '#212529', marginTop: 8 },
-  gridPrice: { fontSize: 14, fontWeight: 'bold', color: '#f57c00', marginTop: 4 }
+  adBannerFooter: { flexDirection: 'row', justifyContent: 'space-between', padding: 12, alignItems: 'center' },
+  adBannerTitle: { fontSize: 13, fontWeight: 'bold', color: '#212529', flex: 1 },
+  adBannerAction: { fontSize: 12, color: '#f57c00', fontWeight: 'bold' },
+  sectionContainer: { marginTop: 15, paddingHorizontal: 16 },
+  sectionHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', padding: 10, borderTopLeftRadius: 6, borderTopRightRadius: 6, alignItems: 'center' },
+  sectionTitle: { color: '#fff', fontWeight: 'bold', fontSize: 13 },
+  seeAllText: { color: '#fff', fontSize: 11, fontWeight: '600' },
+  horizontalProductScroll: { paddingVertical: 10, gap: 10 },
+  productCardHorizontal: { width: 110, backgroundColor: '#fff', borderRadius: 6, borderWidth: 1, borderColor: '#eee', overflow: 'hidden' },
+  productImgHorizontal: { width: '100%', height: 95, resizeMode: 'cover' },
+  miniPromoBadge: { position: 'absolute', top: 4, left: 4, backgroundColor: '#f57c00', paddingVertical: 1, paddingHorizontal: 4, borderRadius: 3 },
+  miniPromoBadgeText: { color: '#fff', fontSize: 8, fontWeight: 'bold' },
+  productInfoHorizontal: { padding: 6 },
+  prodTitleHorizontal: { fontSize: 11, color: '#495057' },
+  prodPriceHorizontal: { fontSize: 11, fontWeight: 'bold', color: '#f57c00', marginTop: 2 },
+  searchResultsContainer: { paddingHorizontal: 16, marginTop: 15 },
+  searchResultsTitle: { fontSize: 14, fontWeight: 'bold', color: '#212529', marginBottom: 10 },
+  noResultsTxt: { fontSize: 13, color: '#7f8c8d', fontStyle: 'italic', textAlign: 'center', marginTop: 20 }
 });

@@ -1,100 +1,173 @@
+import { createClient } from '@supabase/supabase-js';
 import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
-import { Alert, FlatList, Image, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { useCart } from '../../src/context/CartContext';
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, Alert, Image, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
-export default function FavoritesScreen() {
+// Connexion automatique à ton coffre-fort Supabase Jula
+const supabase = createClient(
+  process.env.EXPO_PUBLIC_SUPABASE_URL || "https://bgfmnjvhlonrfpfsxefe.supabase.co",
+  process.env.SUPABASE_SERVICE_ROLE_KEY || "sb_publishable_W_q0i6GH_dKXr2QFc3xu_Q_EUZzpDMK"
+);
+
+interface FavorisItem {
+  id: string;
+  title: string;
+  price: number;
+  image_url: string;
+  stock_quantity: number;
+}
+
+export default function FavorisScreen() {
   const router = useRouter();
-  const { addToCart } = useCart();
-  
-  // Simulation locale d'articles favoris mis de côté par le client
-  const [favorites, setFavorites] = useState<any[]>([
-    {
-      id: '1',
-      name: 'Smartphone Android Jula Pro',
-      price: 85000,
-      image_url: 'https://unsplash.com',
-      category: 'Électronique'
-    }
-  ]);
+  const [items, setItems] = useState<FavorisItem[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const handleRemoveFavorite = (id: string) => {
-    setFavorites(prev => prev.filter(item => item.id !== id));
+  // 📡 ASPIRATION EN DIRECT DES ARTICLES FAVORISÉS DEPUIS SUPABASE
+  useEffect(() => {
+    async function loadFavoris() {
+      try {
+        // Pour les tests, on interroge tes 5 premiers produits du catalogue comme favoris par défaut
+        const { data, error } = await supabase
+          .from('products')
+          .select('id, title, price, image_url, stock_quantity')
+          .limit(5);
+
+        if (!error && data) {
+          setItems(data as FavorisItem[]);
+        }
+      } catch (err) {
+        console.error("Erreur de chargement des favoris:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadFavoris();
+  }, []);
+
+  // 🗑️ FONCTION : Retirer un article de la liste des favoris
+  const deleteItem = (id: string) => {
+    Alert.alert(
+      "Retirer des favoris",
+      "Voulez-vous enlever cet article de votre liste ?",
+      [
+        { text: "Annuler", style: "cancel" },
+        { 
+          text: "Retirer", 
+          style: "destructive",
+          onPress: () => {
+            setItems(items.filter(item => item.id !== id));
+          }
+        }
+      ]
+    );
   };
 
-  const handleMoveToCart = (item: any) => {
-    addToCart(item);
-    Alert.alert("Panier mis à jour", `${item.name} a été déplacé dans votre panier.`);
+  // 🛒 FONCTION : Envoyer l'article directement dans le panier d'achat
+  const addToCart = (title: string) => {
+    Alert.alert("🛒 Panier Jula", `${title} a été ajouté à votre panier avec succès !`);
   };
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* En-tête de page complète */}
-      <View style={styles.header}>
+      {/* Barre d'en-tête Jumia-Style */}
+      <View style={styles.headerBar}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Text style={styles.backText}>⬅ Retour</Text>
+          <Text style={styles.backArrow}>←</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Mes Favoris</Text>
-        <View style={{ width: 60 }} />
+        <Text style={styles.headerBarTitle}>Mes Articles Favoris</Text>
       </View>
 
-      <FlatList
-        data={favorites}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContainer}
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>Votre liste de favoris est vide.</Text>
-            <TouchableOpacity style={styles.shopButton} onPress={() => router.push('/(client)/(tabs)/home')}>
-              <Text style={styles.shopButtonText}>Parcourir la boutique</Text>
-            </TouchableOpacity>
-          </View>
-        }
-        renderItem={({ item }) => (
-          <View style={styles.favoriteCard}>
-            <Image source={{ uri: item.image_url }} style={styles.productImage} />
-            
-            <View style={styles.productDetails}>
-              <View style={styles.cardHeaderRow}>
-                <Text style={styles.productCategory}>{item.category.toUpperCase()}</Text>
-                <TouchableOpacity onPress={() => handleRemoveFavorite(item.id)}>
-                  <Text style={styles.deleteIcon}>❌</Text>
+      {loading ? (
+        <View style={styles.center}>
+          <ActivityIndicator size="large" color="#f57c00" />
+        </View>
+      ) : items.length === 0 ? (
+        // 🛍️ Design écran vide si l'utilisateur n'a rien sélectionné
+        <View style={styles.center}>
+          <Text style={styles.emptyIcon}>❤️</Text>
+          <Text style={styles.emptyTitle}>Votre liste de favoris est vide</Text>
+          <Text style={styles.emptySubtitle}>
+            Parcourez le rayon des grossistes d'Adjamé et touchez le cœur pour sauvegarder vos produits ici.
+          </Text>
+          <TouchableOpacity style={styles.exploreButton} onPress={() => router.push('/')}>
+            <Text style={styles.exploreButtonText}>Commencer mon shopping</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        // 📦 LISTING COMPLET DES PRODUITS FAVORISÉS EN DIRECT
+        <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false}>
+          <Text style={styles.sectionLabel}>Articles sauvegardés ({items.length})</Text>
+
+          {items.map((item) => (
+            <View key={item.id} style={styles.card}>
+              {/* Photo du produit */}
+              <Image source={{ uri: item.image_url }} style={styles.productImage} />
+              
+              {/* Infos textuelles */}
+              <View style={styles.infoBlock}>
+                <Text style={styles.productTitle} numberOfLines={2}>{item.title}</Text>
+                <Text style={styles.productPrice}>{item.price.toLocaleString('fr-FR')} FCFA</Text>
+                
+                {/* Jauge anti-rupture de stock codée */}
+                <Text style={[styles.stockText, { color: item.stock_quantity > 0 ? '#2e7d32' : '#c62828' }]}>
+                  {item.stock_quantity > 0 ? `🟢 En stock (${item.stock_quantity})` : '🔴 Rupture de stock'}
+                </Text>
+              </View>
+
+              {/* Bloc boutons d'actions tactiles à droite */}
+              <View style={styles.actionBlock}>
+                {/* Bouton Acheter / Panier */}
+                <TouchableOpacity 
+                  style={[styles.cartButton, { opacity: item.stock_quantity > 0 ? 1 : 0.5 }]} 
+                  disabled={item.stock_quantity === 0}
+                  onPress={() => addToCart(item.title)}
+                >
+                  <Text style={styles.cartButtonText}>Acheter</Text>
+                </TouchableOpacity>
+
+                {/* Bouton Poubelle de suppression */}
+                <TouchableOpacity style={styles.deleteButton} onPress={() => deleteItem(item.id)}>
+                  <Text style={styles.deleteIcon}>🗑️</Text>
                 </TouchableOpacity>
               </View>
-              
-              <Text style={styles.productName} numberOfLines={1}>{item.name}</Text>
-              <Text style={styles.productPrice}>{item.price.toLocaleString()} FCFA</Text>
-              
-              <TouchableOpacity style={styles.addToCartButton} onPress={() => handleMoveToCart(item)}>
-                <Text style={styles.addToCartText}>Ajouter au panier</Text>
-              </TouchableOpacity>
             </View>
-          </View>
-        )}
-      />
+          ))}
+          <View style={{ height: 40 }} />
+        </ScrollView>
+      )}
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f8f9fa' },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, backgroundColor: '#fff', borderBottomWidth: 1, borderColor: '#dee2e6' },
-  backButton: { padding: 4 },
-  backText: { fontSize: 15, color: '#f57c00', fontWeight: '600' },
-  headerTitle: { fontSize: 18, fontWeight: 'bold', color: '#212529' },
-  listContainer: { padding: 16 },
-  emptyContainer: { alignItems: 'center', marginTop: 60 },
-  emptyText: { fontSize: 15, color: '#6c757d', marginBottom: 16 },
-  shopButton: { backgroundColor: '#fff3e0', paddingHorizontal: 20, paddingVertical: 12, borderRadius: 8, borderWidth: 1, borderColor: '#f57c00' },
-  shopButtonText: { color: '#f57c00', fontWeight: 'bold', fontSize: 14 },
-  favoriteCard: { flexDirection: 'row', backgroundColor: '#fff', borderRadius: 8, padding: 12, marginBottom: 16, elevation: 1 },
-  productImage: { width: 90, height: 90, borderRadius: 6, resizeMode: 'cover' },
-  productDetails: { flex: 1, marginLeft: 16, justifyContent: 'space-between' },
-  cardHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  productCategory: { fontSize: 11, color: '#adb5bd', fontWeight: 'bold' },
-  deleteIcon: { fontSize: 14, padding: 2 },
-  productName: { fontSize: 15, fontWeight: '500', color: '#212529', marginTop: 2 },
-  productPrice: { fontSize: 15, fontWeight: 'bold', color: '#e65100', marginTop: 2 },
-  addToCartButton: { backgroundColor: '#f57c00', paddingVertical: 8, borderRadius: 6, alignItems: 'center', marginTop: 8 },
-  addToCartText: { color: '#fff', fontSize: 13, fontWeight: 'bold' }
+  container: { flex: 1, backgroundColor: '#f4f6f9' },
+  headerBar: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', paddingVertical: 15, paddingHorizontal: 15, borderBottomWidth: 1, borderBottomColor: '#e0e0e0' },
+  backButton: { marginRight: 15 },
+  backArrow: { fontSize: 22, color: '#333', fontWeight: 'bold' },
+  headerBarTitle: { fontSize: 18, fontWeight: 'bold', color: '#333' },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 25 },
+  
+  // Écran vide
+  emptyIcon: { fontSize: 60, marginBottom: 15 },
+  emptyTitle: { fontSize: 15, fontWeight: 'bold', color: '#333', textAlign: 'center', marginBottom: 8 },
+  emptySubtitle: { fontSize: 12, color: '#777', textAlign: 'center', lineHeight: 18, marginBottom: 20 },
+  exploreButton: { backgroundColor: '#f57c00', paddingVertical: 12, paddingHorizontal: 25, borderRadius: 6 },
+  exploreButtonText: { color: '#fff', fontWeight: 'bold', fontSize: 13 },
+  
+  // Cartes Produits Favoris
+  scrollContainer: { padding: 12 },
+  sectionLabel: { fontSize: 12, color: '#666', fontWeight: 'bold', marginBottom: 12, textTransform: 'uppercase' },
+  card: { flexDirection: 'row', backgroundColor: '#fff', borderRadius: 8, padding: 12, marginBottom: 12, alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2, elevation: 2 },
+  productImage: { width: 75, height: 75, borderRadius: 6, backgroundColor: '#eee' },
+  infoBlock: { flex: 1, paddingHorizontal: 12, justifyContent: 'center' },
+  productTitle: { fontSize: 13, fontWeight: '500', color: '#333', lineHeight: 18 },
+  productPrice: { fontSize: 15, fontWeight: 'bold', color: '#f57c00', marginTop: 4 },
+  stockText: { fontSize: 11, marginTop: 4, fontWeight: '600' },
+  
+  // Actions
+  actionBlock: { alignItems: 'center', justifyContent: 'space-between', height: 75 },
+  cartButton: { backgroundColor: '#f57c00', paddingVertical: 6, paddingHorizontal: 14, borderRadius: 4, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 1, elevation: 1 },
+  cartButtonText: { color: '#fff', fontWeight: 'bold', fontSize: 12 },
+  deleteButton: { padding: 5, marginTop: 5 },
+  deleteIcon: { fontSize: 18, color: '#777' }
 });

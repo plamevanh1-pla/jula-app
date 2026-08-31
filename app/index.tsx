@@ -1,13 +1,80 @@
-import React from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, SafeAreaView, Image } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { StyleSheet, Text, View, TouchableOpacity, SafeAreaView, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
+import { supabase } from '../src/config/supabaseClient';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function WelcomeCountryScreen() {
   const router = useRouter();
+  const [loading, setLoading] = useState(false);
 
-  const handleSelectCountry = (countryName: string) => {
-    // On enregistre le choix et on redirige directement vers l'accueil acheteur
-    router.replace('/(client)/(tabs)/home');
+  // 📡 MONITEUR DE SESSION INTELLIGENT : Écoute Supabase et évite les conflits
+  useEffect(() => {
+    async function verifierEtatConnexion() {
+      const paysEnregistre = await AsyncStorage.getItem('jula_pays_choisi');
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      // Si l'user est connecté et son pays est déjà stocké, on détruit l'écran pays directement !
+      if (user && paysEnregistre) {
+        router.dismissAll();
+        router.replace('/(client)/(tabs)/home');
+      }
+    }
+    verifierEtatConnexion();
+
+    // Écouteur pour capter le retour de Google Auth
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if ((event === 'SIGNED_IN' || session) && session?.user) {
+        const paysChoisi = await AsyncStorage.getItem('jula_pays_choisi') || 'CI';
+        
+        // On synchronise le profil cloud en arrière-plan sans bloquer le tactile
+        await supabase.from('profiles').upsert({
+          id: session.user.id,
+          email: session.user.email,
+          country: paysChoisi,
+          role: 'client'
+        }, { onConflict: 'id' });
+
+        // 🎉 PROPULSION DIRECTE SUR HOME ET SUPPRESSION DES ANCIENS ÉCRANS FANTÔMES
+        router.dismissAll();
+        router.replace('/(client)/(tabs)/home');
+      }
+    });
+
+    return () => {
+      if (authListener?.subscription) authListener.subscription.unsubscribe();
+    };
+  }, []);
+
+  const handleSelectCountry = async (countryCode: 'CI' | 'SN' | 'BJ' | 'TG') => {
+    try {
+      setLoading(true);
+      await AsyncStorage.setItem('jula_pays_choisi', countryCode);
+
+      const { data: { user } } = await supabase.auth.getUser();
+
+      if (!user) {
+        // Mode invité : redirection directe
+        router.dismissAll();
+        router.replace('/(client)/(tabs)/home');
+        return;
+      }
+
+      await supabase.from('profiles').upsert({
+        id: user.id,
+        email: user.email,
+        country: countryCode,
+        role: 'client'
+      }, { onConflict: 'id' });
+
+      router.dismissAll();
+      router.replace('/(client)/(tabs)/home');
+    } catch (err) {
+      router.dismissAll();
+      router.replace('/(client)/(tabs)/home');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -17,28 +84,31 @@ export default function WelcomeCountryScreen() {
         <Text style={styles.subTitle}>Veuillez sélectionner votre pays de livraison :</Text>
         <Text style={styles.regionTitle}>Zone CFA (XOF)</Text>
 
-        <View style={styles.grid}>
-          <TouchableOpacity style={styles.countryBtn} onPress={() => handleSelectCountry('Senegal')}>
-            <Text style={styles.flag}>🇸🇳</Text>
-            <Text style={styles.countryName}>Sénégal</Text>
-          </TouchableOpacity>
+        {loading ? (
+          <ActivityIndicator size="large" color="#f57c00" style={{ marginVertical: 40 }} />
+        ) : (
+          <View style={styles.grid}>
+            <TouchableOpacity style={styles.countryBtn} onPress={() => handleSelectCountry('SN')}>
+              <Text style={styles.flag}>🇸🇳</Text>
+              <Text style={styles.countryName}>Sénégal</Text>
+            </TouchableOpacity>
 
-          <TouchableOpacity style={styles.countryBtn} onPress={() => handleSelectCountry('RCI')}>
-            <Text style={styles.flag}>🇨🇮</Text>
-            <Text style={styles.countryName}>Côte d'Ivoire</Text>
-          </TouchableOpacity>
+            <TouchableOpacity style={styles.countryBtn} onPress={() => handleSelectCountry('CI')}>
+              <Text style={styles.flag}>🇨🇮</Text>
+              <Text style={styles.countryName}>Côte d'Ivoire</Text>
+            </TouchableOpacity>
 
-          <TouchableOpacity style={styles.countryBtn} onPress={() => handleSelectCountry('Togo')}>
-            <Text style={styles.flag}>🇹🇬</Text>
-            <Text style={styles.countryName}>Togo</Text>
-          </TouchableOpacity>
+            <TouchableOpacity style={styles.countryBtn} onPress={() => handleSelectCountry('TG')}>
+              <Text style={styles.flag}>🇹🇬</Text>
+              <Text style={styles.countryName}>Togo</Text>
+            </TouchableOpacity>
 
-          <TouchableOpacity style={styles.countryBtn} onPress={() => handleSelectCountry('Benin')}>
-            <Text style={styles.flag}>🇧🇯</Text>
-            <Text style={styles.countryName}>Bénin</Text>
-          </TouchableOpacity>
-        </View>
-        
+            <TouchableOpacity style={styles.countryBtn} onPress={() => handleSelectCountry('BJ')}>
+              <Text style={styles.flag}>🇧🇯</Text>
+              <Text style={styles.countryName}>Bénin</Text>
+            </TouchableOpacity>
+          </View>
+        )}
         <Text style={styles.footerTxt}>Réseau interconnecté Jula Afrique de l'Ouest</Text>
       </View>
     </SafeAreaView>

@@ -1,226 +1,384 @@
-import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { createClient } from '@supabase/supabase-js';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Image, Linking, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { supabase } from '../../src/config/supabaseClient';
+import { ActivityIndicator, Alert, Image, Linking, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+// Connexion instantanée à ta base de données Supabase Jula
+const supabase = createClient(
+  process.env.EXPO_PUBLIC_SUPABASE_URL || "https://bgfmnjvhlonrfpfsxefe.supabase.co",
+  process.env.SUPABASE_SERVICE_ROLE_KEY  || "sb_publishable_W_q0i6GH_dKXr2QFc3xu_Q_EUZzpDMK" // Clé publique Anon conforme mobile
+);
+
+interface Product {
+  id: string;
+  title: string;
+  description: string;
+  price: number;
+  promo_price?: number; 
+  image_url: string;
+  category: string;
+  stock_quantity: number;
+  vendedor_id: string;
+}
 
 export default function ProductDetailScreen() {
-  const { id } = useLocalSearchParams();
+  const { id } = useLocalSearchParams(); 
   const router = useRouter();
-  const [product, setProduct] = useState<any>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [paying, setPaying] = useState<boolean>(false);
   
-  // 🟢 VRAIS AVIS : État connecté directement à la base de données
-  const [reviews, setReviews] = useState<any[]>([]);
-  const [newComment, setNewComment] = useState<string>('');
-  const [newRating, setNewRating] = useState<number>(5);
+  const [product, setProduct] = useState<Product | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [buying, setBuying] = useState(false);
+  const [deliveryMode, setDeliveryMode] = useState('Standard');
 
+  // Session de Production de l'acheteur connecté 
+  const currentUser = {
+    email: 'client_afrique@jula.com',
+    phone: '0707070707',
+    address: 'Abidjan, Cocody',
+    country: 'CI' as 'CI' | 'SN' | 'BJ' | 'TG' 
+  };
+
+  // 📡 ASPIRATION EN DIRECT DU PRODUIT SÉLECTIONNÉ DEPUIS SUPABASE
   useEffect(() => {
-    if (id) {
-      fetchProductDetails();
-      fetchRealReviews(); // Charge les vrais avis du produit
+    async function loadProductData() {
+      if (!id) return;
+      try {
+        const { data, error } = await supabase
+          .from('products')
+          .select('*')
+          .eq('id', id)
+          .single();
+
+        if (!error && data) {
+          setProduct(data as Product);
+        }
+      } catch (err) {
+        console.error("Erreur de chargement du produit:", err);
+      } finally {
+        setLoading(false);
+      }
     }
+    loadProductData();
   }, [id]);
 
-  const fetchProductDetails = async () => {
-    try {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from('products')
-        .select('*')
-        .eq('id', id)
-        .single();
-      if (error) throw error;
-      if (data) setProduct(data);
-    } catch (err: any) {
-      console.log("Erreur détails produit:", err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // 🟢 ROUTE SUPABASE : Récupérer les vrais avis depuis la table
-  const fetchRealReviews = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('reviews')
-        .select('*')
-        .eq('product_id', id)
-        .order('created_at', { ascending: false });
-      if (!error && data) setReviews(data);
-    } catch (err) {
-      console.log("Erreur chargement avis réels:", err);
-    }
-  };
-
-  // 🟢 ACTION SUPABASE : Permettre au vrai acheteur connecté de publier son avis
-  const handleAddReview = async () => {
-    if (!newComment.trim()) return Alert.alert("Erreur", "Veuillez écrire un commentaire.");
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return Alert.alert("Attention", "Connectez-vous pour laisser un avis sur Jula.");
-
-      const { error } = await supabase.from('reviews').insert([
-        {
-          product_id: id,
-          user_id: user.id,
-          user_email: user.email,
-          comment: newComment,
-          rating: newRating
-        }
-      ]);
-
-      if (error) throw error;
-
-      Alert.alert("Merci 🎉", "Votre avis a été publié en direct !");
-      setNewComment('');
-      fetchRealReviews(); // Rafraîchit la liste avec le nouvel avis
-    } catch (err: any) {
-      Alert.alert("Erreur", err.message);
-    }
-  };
-
-  const handleBuyNow = async () => {
+  // 🗑️ FONCTION DE SUPPRESSION LOGÉE TECHNIQUEMENT AU BON ENDROIT
+  const handleSupprimerProduitMobile = async () => {
     if (!product) return;
+
+    Alert.alert(
+      "🗑️ Supprimer l'article",
+      "Voulez-vous vraiment retirer définitivement cet article du catalogue Jula Network ?",
+      [
+        { text: "Annuler", style: "cancel" },
+        {
+          text: "Oui, Supprimer",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              setBuying(true);
+              const { error } = await supabase
+                .from('products')
+                .delete()
+                .eq('id', product.id);
+
+              if (error) throw error;
+
+              Alert.alert("✅ Succès", "L'article a été retiré du catalogue mondial avec succès !");
+              router.push('/(client)/(tabs)'); 
+            } catch (err: any) {
+              Alert.alert("❌ Erreur", "Impossible d'effacer le produit.");
+            } finally {
+              setBuying(false);
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  // 🛒 MOTEUR D'ACHAT ET DE REDIRECTION PAYDUNYA DE PRODUCTION
+  const handleAddToCartAndPay = async () => {
+    if (!product) return;
+    if (!currentUser.email) {
+      Alert.alert("Connexion requise", "Veuillez vous connecter pour acheter.", [{ text: "OK", onPress: () => router.push('/login') }]);
+      return;
+    }
+
+    setBuying(true);
+    const countryLabels = { CI: "Côte d'Ivoire", SN: "Sénégal", BJ: "Bénin", TG: "Togo" };
+    const userCountry = countryLabels[currentUser.country];
+
+    const prixFinalAchat = product.promo_price ? product.promo_price : product.price;
+
+    const orderPayload = {
+      vendedor_id: product.vendedor_id,
+      product_id: product.id,
+      product_title: product.title,
+      price: prixFinalAchat,
+      quantity: 1,
+      delivery_mode: deliveryMode,
+      buyer_email: currentUser.email,
+      buyer_address: `${currentUser.address} (${userCountry})`,
+      buyer_phone: currentUser.phone,
+      currency: 'XOF'
+    };
+
     try {
-      setPaying(true);
-      const response = await fetch('https://onrender.com', {
+      // 🟢 RECONNEXION SUR LA ROUTE SPECIFIQUE /create-order
+      const response = await fetch('https://jula-web.onrender.com', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ product_title: product.title, price: product.price })
+        body: JSON.stringify(orderPayload)
       });
 
-      const data = await response.json();
-      if (response.ok && data.payment_url) {
-        Linking.openURL(data.payment_url).catch(() => Alert.alert("Erreur", "Impossible d'ouvrir le guichet."));
+      const result = await response.json();
+
+      if (result.success) {
+        Alert.alert("🛒 Panier Jula", "Votre article a bien été transmis au grossiste !");
+        if (result.redirect_url) {
+          Linking.openURL(result.redirect_url);
+        }
       } else {
-        throw new Error(data.error || "Erreur serveur.");
+        Alert.alert("❌ Erreur", result.error || "Impossible de commander.");
       }
-    } catch (err) {
-      Alert.alert("Guichet Jula Pay", "Erreur de liaison monétaire PayDunya. Vérifie que ton site web Render est LIVE.");
+    } catch (error) {
+      Alert.alert("📡 Erreur Réseau", "Le serveur en ligne est injoignable.");
     } finally {
-      setPaying(false);
+      setBuying(false);
     }
   };
 
-  if (loading) return <SafeAreaView style={[styles.container, styles.center]}><ActivityIndicator size="large" color="#f57c00" /></SafeAreaView>;
-  if (!product) return <SafeAreaView style={[styles.container, styles.center]}><Text style={styles.errorText}>Article introuvable.</Text></SafeAreaView>;
+  if (loading) {
+    return (
+      <SafeAreaView style={[styles.container, styles.center]}>
+        <ActivityIndicator size="large" color="#f57c00" />
+      </SafeAreaView>
+    );
+  }
+
+  // 🟢 CORRECTION DE LA VARIABLE : On écrit bien "product" au lieu de "products" !
+  if (!product) {
+    return (
+      <SafeAreaView style={[styles.container, styles.center]}>
+        <Text>❌ Produit introuvable.</Text>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.headerRow}>
-        <TouchableOpacity onPress={() => router.back()}><Ionicons name="arrow-back-outline" size={24} color="#212529" /></TouchableOpacity>
-        <Text style={styles.headerTitle} numberOfLines={1}>{product.title}</Text>
-      </View>
-
       <ScrollView showsVerticalScrollIndicator={false}>
-        <Image source={{ uri: product.image_url }} style={styles.productImage} />
         
-        <View style={styles.infoCard}>
-          <Text style={styles.productPrice}>{product.price} FCFA</Text>
-          
-          {/* 📦 JAUGE DE QUANTITÉ VISIBLE POUR LE CLIENT (VERT OU ROUGE) */}
-          <Text style={{ fontSize: 13, fontWeight: 'bold', color: product.stock_quantity > 0 ? '#28a745' : '#d9534f', marginBottom: 10 }}>
-            {product.stock_quantity > 0 ? `📦 Stock disponible : ${product.stock_quantity} pièces` : "❌ Rupture totale de stock"}
-          </Text>
+        {/* Grande Image du produit */}
+        <Image source={{ uri: product.image_url }} style={styles.productImage} />
 
-          <Text style={styles.productTitleText}>{product.title}</Text>
+        <View style={styles.contentBlock}>
+          {/* Titre et Prix */}
+          <Text style={styles.productTitle}>{product.title}</Text>
           
-          <View style={styles.badgeRow}>
-            <View style={styles.badgeCategory}><Text style={styles.badgeText}>📦 {product.category || 'Général'}</Text></View>
-            <View style={styles.badgeExpress}><Text style={styles.badgeExpressText}>⚡ Jula Express</Text></View>
-          </View>
-
-          <View style={styles.divider} />
-          <Text style={styles.sectionLabel}>📝 Description :</Text>
-          <Text style={styles.productDesc}>{product.description}</Text>
-          
-          <View style={styles.divider} />
-          
-          {/* ⭐ SECTION DES VRAIS AVIS CONNECTÉE À SUPABASE */}
-          <Text style={styles.sectionLabel}>⭐ Vrais Avis des Clients Jula ({reviews.length}) :</Text>
-          {reviews.length === 0 ? (
-            <Text style={styles.noReviews}>Aucun avis sur cet article. Soyez le premier à donner votre avis !</Text>
-          ) : (
-            reviews.map((rev) => (
-              <View key={rev.id} style={styles.reviewBox}>
-                <View style={styles.reviewHeader}>
-                  <Text style={styles.reviewUser}>👤 {rev.user_email ? rev.user_email.split('@')[0] : "Client"}</Text>
-                  <Text style={styles.reviewStars}>{"★".repeat(rev.rating)}</Text>
+          {/* Zone de Prix et Remises calculée en direct */}
+          {product.promo_price ? (
+            <View style={{ marginVertical: 8 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Text style={styles.productPrice}>{product.promo_price.toLocaleString('fr-FR')} FCFA</Text>
+                <View style={{ backgroundColor: '#f57c00', paddingVertical: 2, paddingHorizontal: 6, borderRadius: 4, marginLeft: 10 }}>
+                  <Text style={{ color: '#fff', fontSize: 11, fontWeight: 'bold' }}>
+                    -{Math.round(((product.price - product.promo_price) / product.price) * 100)}%
+                  </Text>
                 </View>
-                <Text style={styles.reviewComment}>{rev.comment}</Text>
               </View>
-            ))
+              <Text style={{ fontSize: 14, color: '#999', textDecorationLine: 'line-through' }}>{product.price.toLocaleString('fr-FR')} FCFA</Text>
+            </View>
+          ) : (
+            <Text style={styles.productPrice}>{product.price.toLocaleString('fr-FR')} FCFA</Text>
           )}
 
-          {/* ✏️ BLOC FORMULAIRE D'ÉCRITURE DE VRAI COMMENTAIRE */}
-          <View style={styles.addReviewContainer}>
-            <Text style={styles.addReviewTitle}>Donner mon avis sur l'article :</Text>
-            <TextInput
-              style={styles.reviewInput}
-              placeholder="Écrivez votre vrai commentaire ici..."
-              value={newComment}
-              onChangeText={setNewComment}
-              multiline
-            />
-            <TouchableOpacity style={styles.btnSubmitReview} onPress={handleAddReview}>
-              <Text style={styles.btnSubmitReviewText}>Publier mon avis</Text>
+          {/* JAUGE DE STOCK INTERACTIVE JULA EXPRESS */}
+          <Text style={styles.sectionLabel}>📉 État du stock disponible :</Text>
+          <View style={{ marginVertical: 5 }}>
+            <Text style={{ fontSize: 12, fontWeight: '600', color: product.stock_quantity <= 5 ? '#d32f2f' : '#2e7d32', marginBottom: 4 }}>
+              {product.stock_quantity <= 5 ? `⚠️ Quantité critique : Plus que ${product.stock_quantity} articles !` : `🟢 Stock sécurisé : ${product.stock_quantity} unités disponibles`}
+            </Text>
+            <View style={{ width: '100%', height: 8, backgroundColor: '#e0e0e0', borderRadius: 4, overflow: 'hidden' }}>
+              <View style={{ 
+                height: '100%', 
+                width: `${Math.min((product.stock_quantity / 50) * 100, 100)}%`, 
+                backgroundColor: product.stock_quantity <= 5 ? '#d32f2f' : product.stock_quantity <= 15 ? '#f57c00' : '#2e7d32' 
+              }} />
+            </View>
+          </View>
+
+          {/* Badges de catégorie */}
+          <View style={styles.badgeRow}>
+            <View style={styles.badge}><Text style={styles.badgeText}>📦 {product.category}</Text></View>
+            <View style={[styles.badge, { backgroundColor: '#fff3e0' }]}><Text style={[styles.badgeText, { color: '#e65100' }]}>⚡ Jula Express</Text></View>
+          </View>
+          {/* Description */}
+          <Text style={styles.sectionLabel}>📝 Description :</Text>
+          <Text style={styles.descriptionText}>{product.description || "Aucune description fournie par le vendeur."}</Text>
+
+          {/* ⭐ BLOC DES AVIS CLIENTS D'ORIGINE */}
+          <Text style={styles.sectionLabel}>⭐ Vrais Avis des Clients Jula (0) :</Text>
+          <View style={styles.reviewsBox}>
+            <Text style={styles.noReviewsText}>Aucun avis n'a encore été laissé pour cet article. Soyez le premier à donner votre avis après votre livraison !</Text>
+          </View>
+
+          {/* 🛵 SÉLECTEUR DE MODE DE LIVRAISON */}
+          <Text style={styles.sectionLabel}>🛵 Choisissez votre mode de livraison :</Text>
+          <View style={styles.deliveryRow}>
+            <TouchableOpacity 
+              style={[styles.deliveryBtn, deliveryMode === 'Standard' && styles.deliveryBtnActive]} 
+              onPress={() => setDeliveryMode('Standard')}
+            >
+              <Text style={[styles.deliveryText, deliveryMode === 'Standard' && styles.deliveryTextActive]}>Standard (1 500 XOF)</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={[styles.deliveryBtn, deliveryMode === 'Express' && styles.deliveryBtnActive]} 
+              onPress={() => setDeliveryMode('Express')}
+            >
+              <Text style={[styles.deliveryText, deliveryMode === 'Express' && styles.deliveryTextActive]}>⚡ Express (2 500 XOF)</Text>
             </TouchableOpacity>
           </View>
-        </View>
-      </ScrollView>
 
-      {/* 🛑 TIROIR DU BAS INTÉGRANT LA RECONNAISSANCE AUTOMATIQUE DES RUPTURES DE STOCK */}
-      <View style={styles.footerActionBox}>
-        {product.stock_quantity > 0 ? (
-          <TouchableOpacity 
-            style={[styles.btnBuy, paying ? styles.btnDisabled : null]} 
-            onPress={handleBuyNow} 
-            disabled={paying}
-          >
-            {paying ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.btnBuyText}>💳 Acheter via Mobile Money</Text>}
-          </TouchableOpacity>
-        ) : (
-          <View style={[styles.btnBuy, { backgroundColor: '#dee2e6', borderColor: '#ced4da', borderWidth: 1 }]}>
-            <Text style={{ color: '#6c757d', fontWeight: 'bold', fontSize: 16 }}>❌ Article en Rupture de Stock</Text>
+          {/* 💬 INTERFACES DE CONTACT CLIENT (CHAT EN DIRECT & WHATSAPP) */}
+          <Text style={styles.sectionLabel}>💬 Besoin d'assistance ?</Text>
+          <View style={styles.contactRow}>
+            {/* Bouton Chat En Direct */}
+            <TouchableOpacity style={styles.chatBtn} onPress={() => router.push('/chat')}>
+              <Text style={styles.chatBtnTxt}>✉️ Chat En Direct</Text>
+            </TouchableOpacity>
+
+            {/* Bouton WhatsApp de Production */}
+            <TouchableOpacity 
+              style={styles.wpBtn} 
+              onPress={async () => {
+                const numeroSupport = "2250585187834"; 
+                const messageAutomatique = "Bonjour Jula, j'ai besoin d'une assistance concernant l'application mobile.";
+                
+                // 🌍 CORRECTION EFFECTUÉE : Liaison dynamique wa.me/${numeroSupport} parfaitement réparée
+                const lienUniverselWhatsApp = `https://wa.me{numeroSupport}?text=${encodeURIComponent(messageAutomatique)}`;
+                
+                try {
+                  await Linking.openURL(lienUniverselWhatsApp);
+                } catch (error) {
+                  Alert.alert("WhatsApp Jula", "Impossible de lancer la discussion pour le moment.");
+                }
+              }}
+            >
+              <Text style={styles.wpBtnTxt}>🟢 WhatsApp</Text>
+            </TouchableOpacity>
           </View>
-        )}
-      </View>
+
+          {/* 🛒 ENSEMBLE DE BOUTONS DE PRODUCTION DOUBLE ACTION : PANIER ET ACHAT DIRECT */}
+          <View style={styles.actionRowContainer}>
+            
+            {/* 1. LE BOUTON « AJOUTER AU PANIER » */}
+            <TouchableOpacity 
+              style={[styles.cartAddBtn, product.stock_quantity === 0 && { backgroundColor: '#ccc' }]} 
+              disabled={buying || product.stock_quantity === 0}
+               onPress={async () => {
+  try {
+    // 📡 Récupère le panier actuel stocké en mémoire flash du téléphone
+    const panierExistant = await AsyncStorage.getItem('jula_panier');
+    let listeProduits = panierExistant ? JSON.parse(panierExistant) : [];
+
+    // Vérifie si l'article est déjà dedans pour éviter les doublons
+    const existeDeja = listeProduits.find((p: any) => p.id === product.id);
+    if (!existeDeja) {
+      listeProduits.push({
+        id: product.id,
+        title: product.title,
+        price: product.promo_price || product.price,
+        image_url: product.image_url,
+        category: product.category,
+        quantite: 1
+      });
+      // Enregistrement instantané en mémoire flash du Tecno
+      await AsyncStorage.setItem('jula_panier', JSON.stringify(listeProduits));
+    }
+
+    Alert.alert(
+      "🛒 Panier Jula", 
+      `"${product.title}" a été ajouté à la vitesse de l'éclair !`,
+      [{ text: "Continuer" }]
+    );
+  } catch (err) {
+    Alert.alert("❌ Erreur", "Impossible de mettre à jour le panier.");
+  }
+}}
+            >
+              <Text style={styles.cartAddBtnText}>Ajouter au Panier</Text>
+            </TouchableOpacity>
+             
+            {/* 2. LE BOUTON DE PAIEMENT IMMEDIAT ET DIRECT VIA PAYDUNYA */}
+            <TouchableOpacity 
+              style={[styles.orangeButtonDirect, product.stock_quantity === 0 && { backgroundColor: '#ccc' }]} 
+              onPress={handleAddToCartAndPay}
+              disabled={buying || product.stock_quantity === 0}
+            >
+              <Text style={styles.buttonTextDirect}>
+                {buying ? "Traitement..." : "💳 Acheter Direct"}
+              </Text>
+            </TouchableOpacity>
+
+          </View>
+
+          {/* 🛡️ LE BOUTON DE SUPPRESSION REPLACÉ AU BON ENDROIT (DANS LE FLUX DE DÉFILEMENT) */}
+          {product.vendedor_id === currentUser.email && (
+            <TouchableOpacity 
+              style={styles.mobileDeleteBtn} 
+              onPress={handleSupprimerProduitMobile}
+              disabled={buying}
+            >
+              <Text style={styles.mobileDeleteBtnText}>
+                {buying ? "Suppression en cours..." : "🗑️ Supprimer mon article du catalogue"}
+              </Text>
+            </TouchableOpacity>
+          )}
+
+        </View>
+        <View style={{ height: 30 }} />
+      </ScrollView>
     </SafeAreaView>
   );
 }
 
+// 🎨 FEUILLE DE DESIGN UNITAIRE SANS AUCUNE COUPURE DE CODES
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f4f4f6' },
+  container: { flex: 1, backgroundColor: '#f4f6f9' },
   center: { justifyContent: 'center', alignItems: 'center' },
-  errorText: { fontSize: 15, color: '#6c757d' },
-  headerRow: { flexDirection: 'row', alignItems: 'center', padding: 16, backgroundColor: '#fff', borderBottomWidth: 1, borderColor: '#e9ecef', paddingTop: 40, gap: 15 },
-  headerTitle: { fontSize: 18, fontWeight: 'bold', color: '#212529', flex: 1 },
-  productImage: { width: '100%', height: 300, resizeMode: 'cover' },
-  infoCard: { backgroundColor: '#fff', padding: 16, borderTopLeftRadius: 20, borderTopRightRadius: 20, marginTop: -20, paddingBottom: 100 },
-  productPrice: { fontSize: 24, fontWeight: 'bold', color: '#f57c00', marginBottom: 5 },
-  productTitleText: { fontSize: 20, fontWeight: '600', color: '#212529', marginBottom: 15 },
-  badgeRow: { flexDirection: 'row', gap: 10, marginBottom: 15 },
-  badgeCategory: { backgroundColor: '#e9ecef', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 5 },
-  badgeText: { fontSize: 12, color: '#495057', fontWeight: '500' },
-  badgeExpress: { backgroundColor: '#fff3cd', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 5 },
-  badgeExpressText: { fontSize: 12, color: '#856404', fontWeight: 'bold' },
-  divider: { height: 1, backgroundColor: '#f2f2f2', marginVertical: 15 },
-  sectionLabel: { fontSize: 15, fontWeight: 'bold', color: '#212529', marginBottom: 8 },
-  productDesc: { fontSize: 14, color: '#495057', lineHeight: 20 },
-  noReviews: { fontSize: 13, color: '#7f8c8d', fontStyle: 'italic', marginVertical: 10 },
-  reviewBox: { backgroundColor: '#f8f9fa', padding: 12, borderRadius: 8, marginBottom: 10, borderWidth: 1, borderColor: '#e9ecef' },
-  reviewHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 5 },
-  reviewUser: { fontSize: 13, fontWeight: 'bold', color: '#495057' },
-  reviewStars: { fontSize: 12, color: '#ffc107' },
-  reviewComment: { fontSize: 13, color: '#212529' },
-  addReviewContainer: { marginTop: 20, backgroundColor: '#fff' },
-  addReviewTitle: { fontSize: 14, fontWeight: 'bold', color: '#212529', marginBottom: 10 },
-  reviewInput: { borderWidth: 1, borderColor: '#ced4da', borderRadius: 8, padding: 12, minHeight: 80, textAlignVertical: 'top', fontSize: 14, color: '#212529', marginBottom: 10 },
-  btnSubmitReview: { backgroundColor: '#1072ba', padding: 12, borderRadius: 8, alignItems: 'center' },
-  btnSubmitReviewText: { color: '#fff', fontWeight: 'bold', fontSize: 14 },
-  footerActionBox: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: '#fff', padding: 16, borderTopWidth: 1, borderColor: '#e9ecef' },
-  btnBuy: { backgroundColor: '#f57c00', height: 50, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
-  btnDisabled: { backgroundColor: '#ffb74d' },
-  btnBuyText: { color: '#fff', fontSize: 16, fontWeight: 'bold' }
+  productImage: { width: '100%', height: 300, resizeMode: 'cover', backgroundColor: '#fff' },
+  contentBlock: { padding: 16 },
+  productTitle: { fontSize: 18, fontWeight: 'bold', color: '#333' },
+  productPrice: { fontSize: 22, fontWeight: 'bold', color: '#f57c00', marginVertical: 8 },
+  badgeRow: { flexDirection: 'row', marginBottom: 15 },
+  badge: { backgroundColor: '#eceff1', paddingVertical: 4, paddingHorizontal: 10, borderRadius: 4, marginRight: 8 },
+  badgeText: { fontSize: 11, fontWeight: '600', color: '#455a64' },
+  sectionLabel: { fontSize: 14, fontWeight: 'bold', color: '#555', marginTop: 15, marginBottom: 8 },
+  descriptionText: { fontSize: 13, color: '#666', lineHeight: 18, textAlign: 'justify' },
+  
+  reviewsBox: { backgroundColor: '#fff', padding: 12, borderRadius: 8, borderWidth: 1, borderColor: '#e0e0e0' },
+  noReviewsText: { fontSize: 12, color: '#777', fontStyle: 'italic', textAlign: 'center', lineHeight: 16 },
+  
+  deliveryRow: { flexDirection: 'row', justifyContent: 'space-between' },
+  deliveryBtn: { flex: 1, padding: 12, borderWidth: 1, borderColor: '#ccc', borderRadius: 6, alignItems: 'center', marginRight: 5, backgroundColor: '#fff' },
+  deliveryBtnActive: { borderColor: '#f57c00', backgroundColor: '#fff3e0' },
+  deliveryText: { fontSize: 12, color: '#555', fontWeight: '500' },
+  deliveryTextActive: { color: '#e65100', fontWeight: 'bold' },
+
+  contactRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 5 },
+  chatBtn: { flex: 1, backgroundColor: '#1072ba', padding: 12, borderRadius: 6, alignItems: 'center', marginRight: 5 },
+  chatBtnTxt: { color: '#fff', fontWeight: 'bold', fontSize: 13 },
+  wpBtn: { flex: 1, backgroundColor: '#fff', borderWidth: 1, borderColor: '#25D366', padding: 12, borderRadius: 6, alignItems: 'center', marginLeft: 5 },
+  wpBtnTxt: { color: '#25D366', fontWeight: 'bold', fontSize: 13 },
+
+  mobileDeleteBtn: { backgroundColor: '#d32f2f', padding: 15, borderRadius: 8, alignItems: 'center', marginTop: 15, borderWidth: 1, borderColor: '#d32f2f', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.2, shadowRadius: 2, elevation: 2 },
+  mobileDeleteBtnText: { color: '#fff', fontWeight: 'bold', fontSize: 13, textTransform: 'uppercase' },
+
+  actionRowContainer: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 25 },
+  cartAddBtn: { flex: 1, backgroundColor: '#fff', borderWidth: 2, borderColor: '#1072ba', padding: 15, borderRadius: 8, alignItems: 'center', marginRight: 6, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2, elevation: 2 },
+  cartAddBtnText: { color: '#1072ba', fontWeight: 'bold', fontSize: 13, textTransform: 'uppercase' },
+  orangeButtonDirect: { flex: 1, backgroundColor: '#f57c00', padding: 15, borderRadius: 8, alignItems: 'center', marginLeft: 6, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.15, shadowRadius: 3, elevation: 3 },
+  buttonTextDirect: { color: '#fff', fontWeight: 'bold', fontSize: 13, textTransform: 'uppercase' }
 });

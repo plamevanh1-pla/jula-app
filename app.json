@@ -1,4 +1,4 @@
-  {
+{
   "expo": {
     "name": "Jula",
     "slug": "jula",
@@ -20,6 +20,7 @@
     "android": {
       "package": "com.julaapp.jula",
       "permissions": [
+        "NOTIFICATIONS",
         "NOTIFICATIONS"
       ]
     },
@@ -28,8 +29,6 @@
       "baseUrl": "/",
       "loadingIndicator": "static"
     },
-
-
     "typescript": {
       "tsconfigPath": "tsconfig.json"
     },
@@ -38,6 +37,12 @@
         "projectId": "2ded0a72-0735-44d8-85be-462a53b73411"
       }
     },
-    "owner": "jula-jacky-dev"
+    "owner": "jula-jacky-dev",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/2ded0a72-0735-44d8-85be-462a53b73411"
+    }
   }
 }

@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { supabase } from '../../config/supabaseClient'; // Vérifie que ton fichier client est bien à cet endroit
+import { supabase } from '../../src/config/supabaseClient'; // Vérifie bien que src/config est à cette place
 
-// 📝 Définition du type TypeScript pour un profil Jula
 interface PartnerProfile {
   id: string;
   email: string;
@@ -24,17 +23,42 @@ export default function SuperAdminScreen() {
   const [partners, setPartners] = useState<PartnerProfile[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
-  // 📡 Fonction pour charger tous les partenaires depuis Supabase
-  const fetchPartners = async () => {
+  // 📈 ÉTATS COMPTABLES GLOBAUX DE L'EMPIRE JACKY
+  const [globalRevenue, setGlobalRevenue] = useState<number>(0);
+  const [totalOrders, setTotalOrders] = useState<number>(0);
+
+  // 📡 Fonction suprême pour charger les partenaires ET calculer les revenus en même temps
+  const fetchDataSuprême = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
+      
+      // 1. Récupération de tous les partenaires
+      const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      setPartners((data as PartnerProfile[]) || []);
+      if (profilesError) throw profilesError;
+      setPartners((profilesData as PartnerProfile[]) || []);
+
+      // 2. ANALYSE FINANCIÈRE : Calcul de la somme des ventes globales
+      const { data: ordersData, error: ordersError } = await supabase
+        .from('orders')
+        .select('total_price, status');
+
+      if (!ordersError && ordersData) {
+        setTotalOrders(ordersData.length);
+        
+        let cumulSous = 0;
+        ordersData.forEach(order => {
+          // On comptabilise uniquement les flux monétaires réels (livrés ou en cours de route)
+          if (order.status === 'Livré' || order.status === 'En cours de livraison') {
+            cumulSous += Number(order.total_price);
+          }
+        });
+        setGlobalRevenue(revenue => cumulSous);
+      }
+
     } catch (error: any) {
       Alert.alert('❌ Erreur de synchronisation', error.message);
     } finally {
@@ -43,7 +67,7 @@ export default function SuperAdminScreen() {
   };
 
   useEffect(() => {
-    fetchPartners();
+    fetchDataSuprême();
   }, []);
 
   // ✅ Validation tactile instantanée du gérant ou du livreur
@@ -56,7 +80,7 @@ export default function SuperAdminScreen() {
 
       if (error) throw error;
       Alert.alert('🎉 Succès', `${fullName} est désormais un Partenaire Officiel Jula !`);
-      fetchPartners(); // Rafraîchit l'écran mobile en direct
+      fetchDataSuprême(); // Rafraîchit l'écran mobile et recalcule l'argent en direct
     } catch (error: any) {
       Alert.alert('❌ Échec de validation', error.message);
     }
@@ -66,31 +90,43 @@ export default function SuperAdminScreen() {
     return (
       <View style={styles.center}>
         <ActivityIndicator size="large" color="#f57c00" />
-        <Text style={styles.loadingText}>Connexion sécurisée au coffre-fort Jula...</Text>
+        <Text style={styles.loadingText}>Calcul des finances de l'Empire Jula...</Text>
       </View>
     );
   }
-
   return (
     <View style={styles.container}>
+      {/* 👑 EN-TÊTE D'ADMINISTRATION GÉNÉRALE AVEC VRAIS RAPPORTS DE VENTES */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>🕵️‍♂️ Jacky SuperAdmin</Text>
         <Text style={styles.headerSubtitle}>Quartier Général Mobile Jula</Text>
+        
+        {/* 📊 BOÎTES COMPTABLES DE L'EMPIRE (CRITÈRE SUIVI DES PERFORMANCES) */}
+        <View style={{ flexDirection: 'row', gap: 10, marginTop: 15 }}>
+          <View style={{ flex: 1, backgroundColor: 'rgba(40, 167, 69, 0.15)', padding: 12, borderRadius: 8, borderLeftWidth: 4, borderLeftColor: '#28a745' }}>
+            <Text style={{ fontSize: 10, color: '#aaa', fontWeight: 'bold' }}>💰 CA GLOBAL ENCAISSÉ</Text>
+            <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#28a745', marginTop: 4 }}>{globalRevenue} FCFA</Text>
+          </View>
+          <View style={{ flex: 1, backgroundColor: 'rgba(245, 124, 0, 0.15)', padding: 12, borderRadius: 8, borderLeftWidth: 4, borderLeftColor: '#f57c00' }}>
+            <Text style={{ fontSize: 10, color: '#aaa', fontWeight: 'bold' }}>📦 TRAFFIC TOTAL</Text>
+            <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#f57c00', marginTop: 4 }}>{totalOrders} commandes</Text>
+          </View>
+        </View>
       </View>
 
       <FlatList
         data={partners}
         keyExtractor={(item) => item.id}
         refreshing={loading}
-        onRefresh={fetchPartners}
+        onRefresh={fetchDataSuprême}
         renderItem={({ item }) => (
           <View style={[styles.card, item.is_verified ? styles.cardVerified : null]}>
-            <div style={styles.infoRow}>
+            <View style={styles.infoRow}>
               <Text style={styles.roleBadge}>{item.role?.toUpperCase()}</Text>
               <Text style={[styles.statusBadge, item.is_verified ? styles.statusVerified : null]}>
                 {item.is_verified ? '🔒 VÉRIFIÉ' : '⏳ EN ATTENTE'}
               </Text>
-            </div>
+            </View>
 
             <Text style={styles.partnerName}>{item.full_name}</Text>
             <Text style={styles.partnerDetails}>✉️ {item.email}</Text>
@@ -148,7 +184,7 @@ const styles = StyleSheet.create({
   headerSubtitle: { color: '#aaa', fontSize: 13, marginTop: 4 },
   card: { backgroundColor: '#fff', borderRadius: 12, padding: 15, marginBottom: 15, borderLeftWidth: 5, borderLeftColor: '#1072ba' },
   cardVerified: { borderLeftColor: '#28a745' },
-  infoRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 },
+  infoRow: { flex: 1, flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 },
   roleBadge: { backgroundColor: '#e1f5fe', color: '#0288d1', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6, fontSize: 11, fontWeight: 'bold' },
   statusBadge: { backgroundColor: '#fff3cd', color: '#856404', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6, fontSize: 11, fontWeight: 'bold' },
   statusVerified: { backgroundColor: '#d4edda', color: '#155724' },
@@ -158,6 +194,6 @@ const styles = StyleSheet.create({
   imgBox: { marginRight: 12, alignItems: 'center' },
   imgLabel: { fontSize: 10, color: '#777', fontWeight: 'bold', marginBottom: 4 },
   docImage: { width: 100, height: 70, borderRadius: 6, backgroundColor: '#eee' },
-  btnVerify: { backgroundColor: '#28a745', padding: 12, borderRadius: 8, alignItems: 'center', marginTop: 15 },
+  btnVerify: { backgroundColor: '#28a745', padding: 12, borderRadius: 8, marginTop: 15, alignItems: 'center' },
   btnText: { color: '#fff', fontWeight: 'bold', fontSize: 14 }
 });
