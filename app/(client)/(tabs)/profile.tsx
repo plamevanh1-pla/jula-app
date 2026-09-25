@@ -4,7 +4,7 @@ import * as Linking from 'expo-linking';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { supabase } from '../../../../src/config/supabaseClient';
+import { supabase } from '../../../src/config/supabaseClient';
 
 export default function ProfileScreen() {
   const router = useRouter();
