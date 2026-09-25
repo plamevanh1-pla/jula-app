@@ -133,7 +133,10 @@ useEffect(() => {
 
       <ScrollView showsVerticalScrollIndicator={false}>
         <Text style={styles.mainTitle}>Panier</Text>
-
+        {/* 🔐 AJOUT SUR MESURE : AFFICHAGE ANONYME ET SÉCURISÉ DE L'ACHETEUR */}
+        <Text style={{ fontSize: 13, color: '#6c757d', marginLeft: 16, marginBottom: 10, fontWeight: '500' }}>
+        👤 Compte Jula : {masquerEmail(userCountry ? 'connecte@jula.com' : 'client_afrique@jula.com')}
+        </Text>
         {/* 1️⃣ STRUCTURE DU PANIER VIDE : AVEC LE BOUTON RETOUR HOME */}
         {cartItems.length === 0 && (
           <View style={styles.emptyContainer}>

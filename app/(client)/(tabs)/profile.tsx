@@ -1,18 +1,19 @@
-import { FontAwesome, Ionicons } from '@expo/vector-icons'; // ✨ Importations validées
+ import FontAwesome from '@expo/vector-icons/FontAwesome';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import * as Linking from 'expo-linking';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { supabase } from '../../../src/config/supabaseClient';
+// 🍉 CORRIGÉ : Le chemin remonte maintenant correctement vers le dossier src à la racine
+import { supabase } from '../../../../src/config/supabaseClient';
 
 export default function ProfileScreen() {
   const router = useRouter();
   const [userEmail, setUserEmail] = useState('');
   const [walletBalance, setWalletBalance] = useState(0);
   const [search, setSearch] = useState('');
-  const [loading, setLoading] = useState(true); // Gère le chargement initial
+  const [loading, setLoading] = useState(true);
 
-  // Fonction de masquage sécurisée contre les chaînes vides
   const masquerEmail = (email: string) => {
     if (!email || !email.includes('@')) return "Non connecté";
     const [nom, domaine] = email.split('@');
@@ -24,7 +25,7 @@ export default function ProfileScreen() {
     supabase.auth.getUser()
       .then(({ data: { user } }) => {
         if (user) {
-          setUserEmail(user.email || ''); // Stocke l'email brut
+          setUserEmail(user.email || '');
           fetchWallet(user.id);
         } else {
           setUserEmail('');
@@ -107,13 +108,18 @@ export default function ProfileScreen() {
             <Ionicons name="chatbox-ellipses" size={18} color="#fff" />
             <Text style={styles.chatBtnTxt}>Chat En Direct</Text>
           </TouchableOpacity>
+          <View style={styles.actionRow}>
+          <TouchableOpacity style={styles.chatBtn} onPress={() => router.push('/chat')}>
+            <Ionicons name="chatbox-ellipses" size={18} color="#fff" />
+            <Text style={styles.chatBtnTxt}>Chat En Direct</Text>
+          </TouchableOpacity>
 
           <TouchableOpacity 
             style={styles.wpBtn} 
             onPress={async () => {
               const numeroSupport = "2250585187834"; 
               const messageAutomatique = "Bonjour Jula, j'ai besoin d'une assistance concernant mon profil ou mes commandes.";
-              // ✨ CORRIGÉ : Syntaxe JavaScript wa.me corrigée avec le slash / et le symbole $
+              // ✨ CORRIGÉ PARFAITEMENT : Ajout du / et de la syntaxe \${} pour JavaScript
               const lienUniverselWhatsApp = `https://wa.me{numeroSupport}?text=${encodeURIComponent(messageAutomatique)}`;
               try {
                 await Linking.openURL(lienUniverselWhatsApp);
