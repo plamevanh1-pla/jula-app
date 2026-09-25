@@ -1,10 +1,9 @@
- import FontAwesome from '@expo/vector-icons/FontAwesome';
+import FontAwesome from '@expo/vector-icons/FontAwesome';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import * as Linking from 'expo-linking';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-// 🍉 CORRIGÉ : Le chemin remonte maintenant correctement vers le dossier src à la racine
 import { supabase } from '../../../../src/config/supabaseClient';
 
 export default function ProfileScreen() {
@@ -72,6 +71,7 @@ export default function ProfileScreen() {
       </SafeAreaView>
     );
   }
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.searchBarContainer}>
@@ -102,13 +102,7 @@ export default function ProfileScreen() {
           <Ionicons name="card" size={20} color="#1072ba" />
           <Text style={styles.soldeTxt}>{userEmail ? `Votre solde disponible : ${walletBalance} FCFA` : "Connectez-vous pour voir votre solde disponible"}</Text>
         </View>
-
         <View style={styles.actionRow}>
-          <TouchableOpacity style={styles.chatBtn} onPress={() => router.push('/chat')}>
-            <Ionicons name="chatbox-ellipses" size={18} color="#fff" />
-            <Text style={styles.chatBtnTxt}>Chat En Direct</Text>
-          </TouchableOpacity>
-          <View style={styles.actionRow}>
           <TouchableOpacity style={styles.chatBtn} onPress={() => router.push('/chat')}>
             <Ionicons name="chatbox-ellipses" size={18} color="#fff" />
             <Text style={styles.chatBtnTxt}>Chat En Direct</Text>
@@ -119,7 +113,6 @@ export default function ProfileScreen() {
             onPress={async () => {
               const numeroSupport = "2250585187834"; 
               const messageAutomatique = "Bonjour Jula, j'ai besoin d'une assistance concernant mon profil ou mes commandes.";
-              // ✨ CORRIGÉ PARFAITEMENT : Ajout du / et de la syntaxe \${} pour JavaScript
               const lienUniverselWhatsApp = `https://wa.me{numeroSupport}?text=${encodeURIComponent(messageAutomatique)}`;
               try {
                 await Linking.openURL(lienUniverselWhatsApp);
