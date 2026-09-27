@@ -1,7 +1,7 @@
 import { Tabs } from 'expo-router';
 import React, { useEffect } from 'react';
 import { Text } from 'react-native';
-// 🟢 IMPORTATION DU COMPOSANT CENTRAL DE SÉCURITÉ SUPABASE
+// 🟢 CORRIGÉ : Le chemin d'importation correspond maintenant parfaitement à l'arborescence (client)
 import { supabase } from '../../../src/config/supabaseClient';
 
 export default function TabsLayout() {
