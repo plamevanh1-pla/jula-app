@@ -1,16 +1,15 @@
+import Feather from '@expo/vector-icons/Feather';
 import { Tabs } from 'expo-router';
 import React, { useEffect } from 'react';
-import { Text } from 'react-native';
-// 🟢 CORRIGÉ : Le chemin d'importation correspond maintenant parfaitement à l'arborescence (client)
 import { supabase } from '../../../src/config/supabaseClient';
 
 export default function TabsLayout() {
 
-  // 📡 MONITEUR DE SÉCURITÉ JULA : VERROUILLE L'UTILISATEUR CONNECTÉ DANS LE TÉLÉPHONE
+  // 📡 MONITEUR DE SÉCURITÉ JULA
   useEffect(() => {
     const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_IN' && session) {
-        console.log("🔒 Session Jula active et verrouillée pour :", session.user.email);
+        console.log("🔒 Session Jula active pour :", session.user.email);
       } else if (event === 'SIGNED_OUT' || !session) {
         console.log("👤 Mode Invité / Déconnecté");
       }
@@ -27,14 +26,18 @@ export default function TabsLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: '#f57c00',    // Orange Jula quand l'onglet est sélectionné
-        tabBarInactiveTintColor: '#6c757d',  // Gris quand l'onglet n'est pas sélectionné
+        tabBarActiveTintColor: '#f57c00',    // Orange Jula pour l'onglet actif (comme "Compte" sur ta photo)
+        tabBarInactiveTintColor: '#212529',  // Noir/Gris foncé pour les onglets inactifs
+        tabBarLabelStyle: {
+          fontSize: 12,
+          fontWeight: '500',
+          paddingBottom: 4,
+        },
         tabBarStyle: {
           backgroundColor: '#fff',
           borderTopWidth: 1,
           borderTopColor: '#dee2e6',
-          height: 60,
-          paddingBottom: 8,
+          height: 65,
           paddingTop: 8,
         },
       }}
@@ -44,8 +47,8 @@ export default function TabsLayout() {
         name="home"
         options={{
           title: 'Accueil',
-          tabBarIcon: ({ focused }) => (
-            <Text style={{ fontSize: 20 }}>{focused ? '🏠' : '🏠'}</Text>
+          tabBarIcon: ({ color }) => (
+            <Feather name="home" size={22} color={color} />
           ),
         }}
       />
@@ -55,30 +58,40 @@ export default function TabsLayout() {
         name="categories"
         options={{
           title: 'Catégories',
-          tabBarIcon: ({ focused }) => (
-            <Text style={{ fontSize: 20 }}>{focused ? '📂' : '📁'}</Text>
+          tabBarIcon: ({ color }) => (
+            <Feather name="list" size={22} color={color} />
           ),
         }}
       />
-
       {/* Onglet 3 : Panier */}
       <Tabs.Screen
         name="cart"
         options={{
           title: 'Panier',
-          tabBarIcon: ({ focused }) => (
-            <Text style={{ fontSize: 20 }}>{focused ? '🛒' : '🛒'}</Text>
+          tabBarIcon: ({ color }) => (
+            <Feather name="shopping-cart" size={22} color={color} />
           ),
         }}
       />
 
-      {/* Onglet 4 : Profil */}
+      {/* Onglet 4 : Favoris */}
+      <Tabs.Screen
+        name="favorites"
+        options={{
+          title: 'Favoris',
+          tabBarIcon: ({ color }) => (
+            <Feather name="heart" size={22} color={color} />
+          ),
+        }}
+      />
+
+      {/* Onglet 5 : Compte (Fichier profile.tsx) */}
       <Tabs.Screen
         name="profile"
         options={{
-          title: 'Profil',
-          tabBarIcon: ({ focused }) => (
-            <Text style={{ fontSize: 20 }}>{focused ? '👤' : '👤'}</Text>
+          title: 'Compte',
+          tabBarIcon: ({ color }) => (
+            <Feather name="user" size={22} color={color} />
           ),
         }}
       />

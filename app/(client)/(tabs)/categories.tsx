@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+ import Feather from '@expo/vector-icons/Feather';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Image, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -31,17 +31,16 @@ export default function CategoriesScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* 🔍 Barre supérieure de recherche Style Jumia */}
+      {/* 🔍 Barre supérieure de recherche Style Jumia et icônes Feather */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.push('/(client)/(tabs)/home')}>
-          <Ionicons name="arrow-back" size={24} color="#212529" />
+          <Feather name="arrow-left" size={24} color="#212529" />
         </TouchableOpacity>
         <TouchableOpacity style={styles.searchBar} onPress={() => router.push('/(client)/(tabs)/home')}>
-          <Ionicons name="search-outline" size={18} color="#6c757d" />
+          <Feather name="search" size={18} color="#6c757d" />
           <Text style={styles.searchText}>Rechercher une catégorie sur Jula...</Text>
         </TouchableOpacity>
       </View>
-
       {/* 🗂️ ZONE DOUBLE COLONNE */}
       <View style={styles.body}>
         {/* COLONNE DE GAUCHE : Liste verticale complète des 14 classifications */}
