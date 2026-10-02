@@ -1,4 +1,4 @@
-import Feather from '@expo/vector-icons/Feather';
+ import Feather from '@expo/vector-icons/Feather';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Image, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
@@ -60,12 +60,10 @@ export default function HomeScreen() {
     }
   };
 
-   // 🛑 SÉCURITÉ JULA : DÉSACTIVATION DU CLIC SORTANT SUR LA PUBLICITÉ
   const handleAdPress = () => {
     console.log("Publicité purement visuelle. Redirection bloquée par l'administrateur.");
   };
 
-  // 🎛️ FILTRAGE INTERNE PAR CATÉGORIE ET PAR PRIX MAXIMAL
   const getProductsByCategory = (categoryKeyword: string) => {
     return products.filter(p => {
       const matchesCategory = p.category?.toLowerCase().includes(categoryKeyword.toLowerCase()) ||
@@ -78,7 +76,6 @@ export default function HomeScreen() {
     });
   };
 
-  // Moteur de recherche global + filtre de budget
   const searchedProducts = products.filter(p => {
     const matchesSearch = p.title?.toLowerCase().includes(search.toLowerCase());
     
@@ -132,7 +129,105 @@ export default function HomeScreen() {
           })}
         </ScrollView>
       </View>
-      <View style={{ marginBottom: 15 }}>
+    );
+  };
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <View style={styles.searchBarContainer}>
+        <View style={styles.searchField}>
+          <Feather name="search" size={18} color="#6c757d" />
+          <TextInput 
+            style={styles.searchInput} 
+            placeholder="Rechercher sur Jula..." 
+            value={search}
+            onChangeText={setSearch}
+          />
+        </View>
+        <TouchableOpacity style={styles.cartIconBtn} onPress={() => router.push('/(client)/(tabs)/cart')}>
+          <Feather name="shopping-cart" size={22} color="#f57c00" />
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.filterBudgetBox}>
+        <Feather name="sliders" size={16} color="#f57c00" style={{ marginRight: 6 }} />
+        <Text style={{ fontSize: 13, color: '#495057', fontWeight: '600', marginRight: 10 }}>Budget max :</Text>
+        <TextInput
+          style={styles.budgetInput}
+          placeholder="Ex: 50000"
+          placeholderTextColor="#adb5bd"
+          keyboardType="numeric"
+          value={maxPrice}
+          onChangeText={setMaxPrice}
+        />
+        <Text style={{ fontSize: 13, color: '#f57c00', fontWeight: 'bold', marginLeft: 6 }}>FCFA</Text>
+      </View>
+
+      <ScrollView showsVerticalScrollIndicator={false}>
+        <View style={styles.banner}>
+          <Text style={styles.bannerTitle}>🎉 Jula E-Commerce</Text>
+          <Text style={styles.bannerSub}>Réseau interconnecté • 4 Pays de la Zone CFA</Text>
+        </View>
+
+        {ad && (
+          <TouchableOpacity style={styles.adBannerContainer} onPress={handleAdPress}>
+            <Image source={{ uri: ad.image_url }} style={styles.adBannerImage} />
+            <View style={styles.adBannerFooter}>
+              <Text style={styles.adBannerTitle} numberOfLines={1}>{ad.title}</Text>
+              <Text style={styles.adBannerAction}>Devenir Partenaire ➔</Text>
+            </View>
+          </TouchableOpacity>
+        )}
+
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.topCategoriesScroll}>
+          {topCategories.map((cat) => {
+            const isSelected = selectedCategoryKeyword === cat.keyword;
+            return (
+              <TouchableOpacity 
+                key={cat.id} 
+                style={[styles.topCatBadge, isSelected ? { backgroundColor: '#f57c00', borderColor: '#f57c00' } : null]} 
+                onPress={() => setSelectedCategoryKeyword(cat.keyword)}
+              >
+                <Text style={[styles.topCatText, isSelected ? { color: '#fff', fontWeight: 'bold' } : null]}>{cat.title}</Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+
+        {loading ? (
+          <ActivityIndicator size="large" color="#f57c00" style={{ marginTop: 40 }} />
+        ) : (search.length > 0 || maxPrice.length > 0 || selectedCategoryKeyword !== '') ? (
+          <View style={styles.searchResultsContainer}>
+            <Text style={styles.searchResultsTitle}>Articles correspondants ({searchedProducts.length})</Text>
+            {searchedProducts.length === 0 ? (
+              <Text style={styles.noResultsTxt}>❌ Aucun article ne correspond à vos filtres.</Text>
+            ) : (
+              <View style={styles.jumiaGrid}>
+                {searchedProducts.map(item => {
+                  let remiseGrid = 0;
+                  if (item.price && item.promo_price && item.price > item.promo_price) {
+                    remiseGrid = Math.round(((item.price - item.promo_price) / item.price) * 100);
+                  }
+                  return (
+                    <TouchableOpacity key={item.id} style={styles.jumiaCard} onPress={() => router.push(`/product/${item.id}`)}>
+                      <View style={styles.imageContainer}>
+                        <Image source={{ uri: item.image_url }} style={styles.jumiaProductImg} />
+                        {remiseGrid > 0 && (
+                          <View style={styles.jumiaPromoBadge}><Text style={styles.jumiaPromoBadgeText}>-{remiseGrid}%</Text></View>
+                        )}
+                      </View>
+                      <View style={styles.jumiaInfoBlock}>
+                        <Text style={styles.jumiaProductTitle} numberOfLines={2}>{item.title}</Text>
+                        <Text style={styles.jumiaCurrentPrice}>{(item.promo_price || item.price).toLocaleString('fr-FR')} FCFA</Text>
+                      </View>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            )}
+          </View>
+        ) : (
+        <View style={{ marginBottom: 15 }}>
             <Text style={styles.globalCatalogLabel}>🔥 Grand Catalogue des Grossistes en Direct</Text>
             
             <View style={styles.jumiaGrid}>
@@ -224,7 +319,7 @@ const styles = StyleSheet.create({
   stockSection: { marginVertical: 6 },
   stockCountText: { fontSize: 10, fontWeight: '600', color: '#555', marginBottom: 3 },
   progressBarBackground: { width: '100%', height: 5, backgroundColor: '#e0e0e0', borderRadius: 3, overflow: 'hidden' },
-  progressBarFill: { height: '100%', borderRadius: 3, backgroundColor: '#2e7d32' },
+  progressBarFill: { height: '100%', borderRadius: 3 },
   jumiaCategoryBadge: { fontSize: 9, color: '#495057', backgroundColor: '#e9ecef', paddingVertical: 2, paddingHorizontal: 6, borderRadius: 4, alignSelf: 'flex-start', marginTop: 4 },
   adBannerContainer: { margin: 16, backgroundColor: '#fff', borderRadius: 8, overflow: 'hidden', borderWidth: 1, borderColor: '#eee' },
   adBannerImage: { width: '100%', height: 130, resizeMode: 'cover' },
