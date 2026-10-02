@@ -1,16 +1,17 @@
- import Feather from '@expo/vector-icons/Feather';
+import Feather from '@expo/vector-icons/Feather';
 import * as Linking from 'expo-linking';
 import { useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { ActivityIndicator, Alert, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { supabase } from '../../../src/config/supabaseClient';
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const [userEmail, setUserEmail] = useState('');
-  const [walletBalance, setWalletBalance] = useState(0);
+  
+  // 🌟 DONNÉES DE TEST SANS SUPABASE POUR ÉVITER LE GEL NOIR D'ANDROID
+  const [userEmail, setUserEmail] = useState('jacky.test@jula.ci');
+  const [walletBalance, setWalletBalance] = useState(25000);
   const [search, setSearch] = useState('');
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   const masquerEmail = (email: string) => {
     if (!email || !email.includes('@')) return "Non connecté";
@@ -19,38 +20,10 @@ export default function ProfileScreen() {
     return `${nom.substring(0, 2)}**********@${domaine}`;
   };
 
-  useEffect(() => {
-    if (!supabase || !supabase.auth) {
-      setLoading(false);
-      return;
-    }
-    supabase.auth.getUser()
-      .then(({ data: { user } }) => {
-        if (user) {
-          setUserEmail(user.email || '');
-          fetchWallet(user.id);
-        } else {
-          setUserEmail('');
-        }
-      })
-      .catch((err) => console.log("Erreur session profile:", err))
-      .finally(() => setLoading(false));
-  }, []);
-
-  const fetchWallet = async (userId: string) => {
-    try {
-      const { data } = await supabase.from('wallets').select('balance_fcfa').eq('user_id', userId).maybeSingle();
-      if (data) setWalletBalance(data.balance_fcfa);
-    } catch (err) {
-      console.log("Erreur portefeuille:", err);
-    }
-  };
-
   const handleLogout = () => {
     Alert.alert("Déconnexion", "Voulez-vous vous déconnecter de Jula ?", [
       { text: "Annuler", style: "cancel" },
-      { text: "Oui", onPress: async () => { 
-          await supabase.auth.signOut(); 
+      { text: "Oui", onPress: () => { 
           setUserEmail(''); 
           setWalletBalance(0);
           router.replace('/(auth)/login'); 
