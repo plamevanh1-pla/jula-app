@@ -1,4 +1,4 @@
-import Feather from '@expo/vector-icons/Feather';
+ import Feather from '@expo/vector-icons/Feather';
 import * as Linking from 'expo-linking';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
@@ -20,6 +20,10 @@ export default function ProfileScreen() {
   };
 
   useEffect(() => {
+    if (!supabase || !supabase.auth) {
+      setLoading(false);
+      return;
+    }
     supabase.auth.getUser()
       .then(({ data: { user } }) => {
         if (user) {
@@ -180,7 +184,7 @@ const styles = StyleSheet.create({
   searchBarContainer: { paddingHorizontal: 16, paddingBottom: 12, backgroundColor: '#fff', paddingTop: 40 },
   searchField: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#e9ecef', borderRadius: 25, paddingHorizontal: 16, height: 48, gap: 10 },
   searchInput: { flex: 1, fontSize: 16, color: '#212529', fontWeight: '500' },
-  loginBlock: { flexDirection: 'row', backgroundColor: '#fff', padding: 16, marginTop: 10, alignItems: 'center', centerContent: 'space-between' },
+  loginBlock: { flexDirection: 'row', backgroundColor: '#fff', padding: 16, marginTop: 10, alignItems: 'center', justifyContent: 'space-between' },
   bonjourTxt: { fontSize: 18, fontWeight: 'bold', color: '#212529' },
   subBonjourTxt: { fontSize: 13, color: '#7f8c8d', marginTop: 2 },
   btnOrangeConnect: { backgroundColor: '#f57c00', paddingHorizontal: 22, paddingVertical: 12, borderRadius: 4 },
