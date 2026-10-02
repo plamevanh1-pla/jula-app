@@ -85,16 +85,16 @@ export default function TabsLayout() {
         }}
       />
 
-      {/* Onglet 5 : Compte (Fichier profile.tsx) */}
-      <Tabs.Screen
-        name="profile"
-        options={{
-          title: 'Compte',
-          tabBarIcon: ({ color }) => (
-            <Feather name="user" size={22} color={color} />
-          ),
-        }}
-      />
+       <Tabs.Screen
+  name="account"
+  options={{
+    title: 'Compte',
+    tabBarIcon: ({ color }) => (
+      <Feather name="user" size={22} color={color} />
+    ),
+  }}
+/>
+
     </Tabs>
   );
 }
