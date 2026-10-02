@@ -1,4 +1,4 @@
-import { useRouter } from 'expo-router';
+  import { useRouter } from 'expo-router';
 import React from 'react';
 import { Alert, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
@@ -39,7 +39,7 @@ export default function ServicesScreen() {
         {/* CARTE 2 : JULA PAY / FINANCES */}
         <TouchableOpacity style={[styles.serviceCard, { borderLeftColor: '#1072ba' }]} onPress={() => ouvrirService("Jula Pay & Finances")}>
           <View style={[styles.iconBox, { backgroundColor: '#e3f2fd' }]}>
-            <Text style={[styles.cardIcon, { color: '#1072ba' }]}>💰</Text>
+            <Text style={styles.cardIcon}>💰</Text>
           </View>
           <View style={styles.textBlock}>
             <Text style={[styles.cardTitle, { color: '#1072ba' }]}>Jula Pay & Finances</Text>
@@ -53,7 +53,7 @@ export default function ServicesScreen() {
         {/* CARTE 3 : FORMATION JULA ACADÉMIE */}
         <TouchableOpacity style={[styles.serviceCard, { borderLeftColor: '#2e7d32' }]} onPress={() => ouvrirService("Formation Académie Jula")}>
           <View style={[styles.iconBox, { backgroundColor: '#e8f5e9' }]}>
-            <Text style={[styles.cardIcon, { color: '#2e7d32' }]}>🎓</Text>
+            <Text style={styles.cardIcon}>🎓</Text>
           </View>
           <View style={styles.textBlock}>
             <Text style={[styles.cardTitle, { color: '#2e7d32' }]}>Formation Académie Jula</Text>

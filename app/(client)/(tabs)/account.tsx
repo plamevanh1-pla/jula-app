@@ -1,4 +1,5 @@
-  import Feather from '@expo/vector-icons/Feather';
+import Feather from '@expo/vector-icons/Feather';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Linking from 'expo-linking';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
@@ -9,6 +10,7 @@ export default function AccountScreen() {
   const router = useRouter();
   const [userEmail, setUserEmail] = useState('');
   const [walletBalance, setWalletBalance] = useState(0);
+  const [currentCountry, setCurrentCountry] = useState('🇨🇮 Côte d\'Ivoire');
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
 
@@ -20,31 +22,32 @@ export default function AccountScreen() {
   };
 
   useEffect(() => {
-    if (!supabase || !supabase.auth) {
-      setLoading(false);
-      return;
-    }
-    supabase.auth.getUser()
-      .then(({ data: { user } }) => {
-        if (user) {
-          setUserEmail(user.email || '');
-          fetchWallet(user.id);
-        } else {
-          setUserEmail('');
-        }
-      })
-      .catch((err) => console.log("Erreur session account:", err))
-      .finally(() => setLoading(false));
-  }, []);
+    async function chargerDonneesProfil() {
+      try {
+        // 📡 1. Détection du drapeau national choisi par l'utilisateur
+        const pays = await AsyncStorage.getItem('jula_pays_choisi') || 'CI';
+        if (pays === 'SN') setCurrentCountry('🇸🇳 Sénégal');
+        if (pays === 'TG') setCurrentCountry('🇹🇬 Togo');
+        if (pays === 'BJ') setCurrentCountry('🇧🇯 Bénin');
+        if (pays === 'CI') setCurrentCountry('🇨🇮 Côte d\'Ivoire');
 
-  const fetchWallet = async (userId: string) => {
-    try {
-      const { data } = await supabase.from('wallets').select('balance_fcfa').eq('user_id', userId).maybeSingle();
-      if (data) setWalletBalance(data.balance_fcfa);
-    } catch (err) {
-      console.log("Erreur portefeuille:", err);
+        // 🔑 2. Détection automatique de la session cloud Supabase
+        if (supabase && supabase.auth) {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user) {
+            setUserEmail(user.email || '');
+            const { data: wallet } = await supabase.from('wallets').select('balance_fcfa').eq('user_id', user.id).maybeSingle();
+            if (wallet) setWalletBalance(wallet.balance_fcfa);
+          }
+        }
+      } catch (err) {
+        console.log("Erreur chargement profil international:", err);
+      } finally {
+        setLoading(false);
+      }
     }
-  };
+    chargerDonneesProfil();
+  }, []);
 
   const handleLogout = () => {
     Alert.alert("Déconnexion", "Voulez-vous vous déconnecter de Jula ?", [
@@ -87,12 +90,12 @@ export default function AccountScreen() {
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.loginBlock}>
           <View style={{ flex: 1 }}>
-            <Text style={styles.bonjourTxt}>Bonjour</Text>
+            <Text style={styles.bonjourTxt}>Bonjour ({currentCountry})</Text>
             <Text style={styles.subBonjourTxt}>{userEmail ? masquerEmail(userEmail) : "Merci d'insérer votre compte"}</Text>
           </View>
           {!userEmail ? (
             <TouchableOpacity style={styles.btnOrangeConnect} onPress={() => router.push('/(auth)/login')}>
-              <Text style={styles.btnConnectTxt}>Connectez-vous</Text>
+              <Text style={styles.btnConnectTxt}>Connexion</Text>
             </TouchableOpacity>
           ) : (
             <TouchableOpacity style={[styles.btnOrangeConnect, {backgroundColor: '#d9534f'}]} onPress={handleLogout}>
@@ -126,6 +129,19 @@ export default function AccountScreen() {
           >
             <Feather name="message-circle" size={18} color="#25D366" />
             <Text style={styles.wpBtnTxt}>WhatsApp</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* 🌟 MODULE DE SÉLECTION DE PAYS INTERNE */}
+        <Text style={styles.sectionTitle}>Région de livraison</Text>
+        <View style={styles.menuGroup}>
+          <TouchableOpacity style={styles.menuItem} onPress={async () => {
+            await AsyncStorage.removeItem('jula_pays_choisi'); 
+            router.replace('/index'); 
+          }}>
+            <Feather name="globe" size={20} color="#f57c00" style={{ marginRight: 16 }} />
+            <Text style={[styles.menuItemTxt, { color: '#f57c00', fontWeight: 'bold' }]}>Changer de pays actuel</Text>
+            <Feather name="chevron-right" size={16} color="#f57c00" />
           </TouchableOpacity>
         </View>
 
@@ -185,7 +201,7 @@ const styles = StyleSheet.create({
   searchField: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#e9ecef', borderRadius: 25, paddingHorizontal: 16, height: 48, gap: 10 },
   searchInput: { flex: 1, fontSize: 16, color: '#212529', fontWeight: '500' },
   loginBlock: { flexDirection: 'row', backgroundColor: '#fff', padding: 16, marginTop: 10, alignItems: 'center', justifyContent: 'space-between' },
-  bonjourTxt: { fontSize: 18, fontWeight: 'bold', color: '#212529' },
+  bonjourTxt: { fontSize: 15, fontWeight: 'bold', color: '#212529' },
   subBonjourTxt: { fontSize: 13, color: '#7f8c8d', marginTop: 2 },
   btnOrangeConnect: { backgroundColor: '#f57c00', paddingHorizontal: 22, paddingVertical: 12, borderRadius: 4 },
   btnConnectTxt: { color: '#fff', fontWeight: 'bold', fontSize: 14 },

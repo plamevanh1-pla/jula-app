@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, SafeAreaView, ActivityIndicator } from 'react-native';
+ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { supabase } from '../src/config/supabaseClient';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function WelcomeCountryScreen() {
   const router = useRouter();
@@ -14,9 +14,8 @@ export default function WelcomeCountryScreen() {
       const paysEnregistre = await AsyncStorage.getItem('jula_pays_choisi');
       const { data: { user } } = await supabase.auth.getUser();
       
-      // Si l'user est connecté et son pays est déjà stocké, on détruit l'écran pays directement !
+      // ✨ CORRIGÉ : Propulsion directe et sécurisée sans l'historique fantôme
       if (user && paysEnregistre) {
-        router.dismissAll();
         router.replace('/(client)/(tabs)/home');
       }
     }
@@ -35,8 +34,7 @@ export default function WelcomeCountryScreen() {
           role: 'client'
         }, { onConflict: 'id' });
 
-        // 🎉 PROPULSION DIRECTE SUR HOME ET SUPPRESSION DES ANCIENS ÉCRANS FANTÔMES
-        router.dismissAll();
+        // 🎉 PROPULSION DIRECTE SUR HOME ET SUPPRESSION DES ANCIENS ÉCRANS
         router.replace('/(client)/(tabs)/home');
       }
     });
@@ -54,8 +52,7 @@ export default function WelcomeCountryScreen() {
       const { data: { user } } = await supabase.auth.getUser();
 
       if (!user) {
-        // Mode invité : redirection directe
-        router.dismissAll();
+        // Mode invité : redirection directe vers l'accueil
         router.replace('/(client)/(tabs)/home');
         return;
       }
@@ -67,10 +64,8 @@ export default function WelcomeCountryScreen() {
         role: 'client'
       }, { onConflict: 'id' });
 
-      router.dismissAll();
       router.replace('/(client)/(tabs)/home');
     } catch (err) {
-      router.dismissAll();
       router.replace('/(client)/(tabs)/home');
     } finally {
       setLoading(false);
@@ -83,7 +78,6 @@ export default function WelcomeCountryScreen() {
         <Text style={styles.logoText}>Jula</Text>
         <Text style={styles.subTitle}>Veuillez sélectionner votre pays de livraison :</Text>
         <Text style={styles.regionTitle}>Zone CFA (XOF)</Text>
-
         {loading ? (
           <ActivityIndicator size="large" color="#f57c00" style={{ marginVertical: 40 }} />
         ) : (

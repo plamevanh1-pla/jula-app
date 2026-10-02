@@ -1,6 +1,8 @@
-import { useRouter } from 'expo-router';
+ import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Alert, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+// 🟢 IMPORTATION DE LA BIBLIOTHÈQUE VECTO MODERNE FEATHER
+import Feather from '@expo/vector-icons/Feather';
 
 export default function PaymentSettingsScreen() {
   const router = useRouter();
@@ -9,15 +11,15 @@ export default function PaymentSettingsScreen() {
   const [selectedMethod, setSelectedMethod] = useState('Mobile Money');
 
   const associerNouvelleCarte = () => {
-    Alert.alert("💳 Sécurité Jula Pay", "La liaison cryptée de nouvelles cartes bancaires (Visa / Mastercard) sera activée dès la validation de votre dossier d'agrément régional.");
+    Alert.alert("💳 Sécurité Jula Pay", "La liaison cryptée de nouvelles cartes bancaires (Visa / Mastercard) sera activée dès la validation de votre dossier d'agrément régional auprès de la BCEAO.");
   };
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Barre d'en-tête officielle */}
+      {/* 🔍 BARRE D'EN-TÊTE CONFIGURÉE AVEC ICONE FEATHER ET MARGES ANDROID */}
       <View style={styles.headerBar}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Text style={styles.backArrow}>←</Text>
+          <Feather name="arrow-left" size={24} color="#212529" />
         </TouchableOpacity>
         <Text style={styles.headerBarTitle}>Paramètres de paiement</Text>
       </View>
@@ -58,7 +60,7 @@ export default function PaymentSettingsScreen() {
           <Text style={styles.addButtonText}>+ Ajouter un moyen de paiement</Text>
         </TouchableOpacity>
 
-        {/* NOTE DE SÉCURITÉ COMPATIBLE PLAY STORE */}
+        {/* NOTE DE SÉCURITÉ REGIONALE */}
         <View style={styles.securityBox}>
           <Text style={styles.securityText}>🔒 Vos informations financières sont entièrement chiffrées de bout en bout et gérées de manière conforme aux exigences bancaires de la BCEAO dans toute la zone UEMOA.</Text>
         </View>
@@ -76,24 +78,23 @@ export default function PaymentSettingsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f4f6f9' },
-  headerBar: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', paddingVertical: 15, paddingHorizontal: 15, borderBottomWidth: 1, borderBottomColor: '#e0e0e0', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 2 },
-  backButton: { marginRight: 15 },
-  backArrow: { fontSize: 22, color: '#333', fontWeight: 'bold' },
-  headerBarTitle: { fontSize: 18, fontWeight: 'bold', color: '#333' },
+  headerBar: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', paddingVertical: 15, paddingHorizontal: 15, borderBottomWidth: 1, borderBottomColor: '#dee2e6', paddingTop: 40, gap: 12 },
+  backButton: { padding: 2 },
+  headerBarTitle: { fontSize: 18, fontWeight: 'bold', color: '#212529' },
   
   scrollContainer: { padding: 15 },
-  sectionLabel: { fontSize: 12, color: '#666', fontWeight: 'bold', marginBottom: 12, textTransform: 'uppercase', letterSpacing: 0.5 },
+  sectionLabel: { fontSize: 12, color: '#6c757d', fontWeight: 'bold', marginBottom: 12, textTransform: 'uppercase', letterSpacing: 0.5 },
   
   // Style des lignes de paiement
-  paymentCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 8, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: '#eee', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 1 },
+  paymentCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 8, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: '#dee2e6', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 1 },
   activeCard: { borderColor: '#f57c00', backgroundColor: '#fff3e0' },
   cardIcon: { fontSize: 24, marginRight: 15 },
   textBlock: { flex: 1 },
-  cardTitle: { fontSize: 14, fontWeight: 'bold', color: '#333' },
-  cardDescription: { fontSize: 11, color: '#777', marginTop: 3, lineHeight: 16 },
+  cardTitle: { fontSize: 14, fontWeight: 'bold', color: '#212529' },
+  cardDescription: { fontSize: 12, color: '#7f8c8d', marginTop: 3, lineHeight: 16 },
   
   // Boutons radio personnalisés
-  radio: { width: 18, height: 18, borderRadius: 9, borderWidth: 2, borderColor: '#ccc', backgroundColor: '#fff' },
+  radio: { width: 18, height: 18, borderRadius: 9, borderWidth: 2, borderColor: '#dee2e6', backgroundColor: '#fff' },
   radioChecked: { borderColor: '#f57c00', backgroundColor: '#f57c00' },
   
   addButton: { backgroundColor: '#fff', borderWidth: 1, borderColor: '#f57c00', padding: 13, borderRadius: 8, alignItems: 'center', marginVertical: 15 },

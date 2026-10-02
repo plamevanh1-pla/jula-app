@@ -1,6 +1,8 @@
-import { useRouter } from 'expo-router';
+  import { useRouter } from 'expo-router';
 import React, { useRef } from 'react';
 import { SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+// 🟢 IMPORTATION DE L'ICÔNE FEATHER POUR LA BARRE SUPÉRIEURE
+import Feather from '@expo/vector-icons/Feather';
 
 export default function AboutScreen() {
   const router = useRouter();
@@ -20,6 +22,14 @@ export default function AboutScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      {/* 🔍 BARRE DE RETOUR MODERNE INTÉGRÉE POUR EVITER LE BLOCAGE */}
+      <View style={styles.headerBar}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <Feather name="arrow-left" size={24} color="#212529" />
+        </TouchableOpacity>
+        <Text style={styles.headerBarTitle}>À propos de Jula</Text>
+      </View>
+
       <View style={styles.header}>
         <Text style={styles.headerTitle}>🏢 À propos de Jula Network</Text>
         <Text style={styles.headerSubtitle}>L'écosystème e-commerce des grossistes d'Afrique de l'Ouest</Text>
@@ -63,7 +73,6 @@ export default function AboutScreen() {
         </View>
 
         <Text style={styles.sectionDivider}>📄 COEUR DES RÈGLEMENTS ET FILIALES JULA</Text>
-
         <View style={styles.sectionCard} onLayout={(e) => capturerPosition(1, e.nativeEvent.layout.y)}>
           <Text style={styles.sectionTitle}>1. Qui sommes-nous ?</Text>
           <Text style={styles.sectionBody}>
@@ -74,10 +83,10 @@ export default function AboutScreen() {
         <View style={[styles.sectionCard, { borderLeftColor: '#1072ba' }]} onLayout={(e) => capturerPosition(2, e.nativeEvent.layout.y)}>
           <Text style={[styles.sectionTitle, { color: '#1072ba' }]}>2. Comment fonctionne le réseau ?</Text>
           <Text style={styles.sectionBody}>
-            • Les Grossistes propulsent leurs stocks en direct de leurs magasins via leur tableau de bord PC [jula-web].{"\n"}
-            • Les Clients achètent en un clic au prix d'usine réel de la zone UEMOA [jula-web].{"\n"}
-            • La Flotte Jula Express (Livreurs à moto connectés en direct) récupère le colis au dépôt [jula-web].{"\n"}
-            • Les Points Relais sécurisent le stockage de proximité pour un retrait confortable [jula-web].
+            • Les Grossistes propulsent leurs stocks en direct de leurs magasins via leur tableau de bord PC.{"\n"}
+            • Les Clients achètent en un clic au prix d'usine réel de la zone UEMOA.{"\n"}
+            • La Flotte Jula Express (Livreurs à moto connectés en direct) récupère le colis au dépôt.{"\n"}
+            • Les Points Relais sécurisent le stockage de proximité pour un retrait confortable.
           </Text>
         </View>
 
@@ -124,7 +133,7 @@ export default function AboutScreen() {
         <View style={[styles.sectionCard, { borderLeftColor: '#2e7d32' }]} onLayout={(e) => capturerPosition(7, e.nativeEvent.layout.y)}>
           <Text style={[styles.sectionTitle, { color: '#2e7d32' }]}>7. Protection des Données & Supabase</Text>
           <Text style={styles.sectionBody}>
-            La transparence est au cœur de Jula. Toutes les données d'utilisateurs réels (e-mails, numéros de téléphone et CNI des marchands) sont verrouillées par le système de sécurité strict de Supabase [jula-web]. Vos coordonnées ne sont partagées qu'avec le livreur au moment exact de l'expédition pour garantir la confidentialité de vos transactions [jula-web].
+            La transparence est au cœur de Jula. Toutes les données d'utilisateurs réels (e-mails, numéros de téléphone et CNI des marchands) sont verrouillées par le système de sécurité strict de Supabase. Vos coordonnées ne sont partagées qu'avec le livreur au moment exact de l'expédition pour garantir la confidentialité de vos transactions.
           </Text>
         </View>
 
@@ -140,20 +149,23 @@ export default function AboutScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f4f6f9' },
-  header: { backgroundColor: '#f57c00', padding: 22, alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.15, shadowRadius: 3, elevation: 3 },
-  headerTitle: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
-  headerSubtitle: { color: '#ffe0b2', fontSize: 11, marginTop: 4, textAlign: 'center' },
+  headerBar: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', paddingVertical: 15, paddingHorizontal: 15, borderBottomWidth: 1, borderBottomColor: '#dee2e6', paddingTop: 40, gap: 12 },
+  backButton: { padding: 2 },
+  headerBarTitle: { fontSize: 18, fontWeight: 'bold', color: '#212529' },
+  header: { backgroundColor: '#fff', padding: 16, borderBottomWidth: 1, borderBottomColor: '#eee' },
+  headerTitle: { fontSize: 18, fontWeight: 'bold', color: '#f57c00' },
+  headerSubtitle: { fontSize: 12, color: '#6c757d', marginTop: 4 },
   scrollContainer: { padding: 12 },
-  sommaireBox: { backgroundColor: '#fff', padding: 15, borderRadius: 10, marginBottom: 15, borderWidth: 1, borderColor: '#e0e0e0' },
-  sommaireTitle: { fontSize: 14, fontWeight: 'bold', color: '#f57c00' },
-  sommaireSubtitle: { fontSize: 11, color: '#666', marginTop: 4, marginBottom: 12 },
-  gridContainer: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
-  gridButton: { width: '48%', backgroundColor: '#fafafa', padding: 12, borderRadius: 6, borderWidth: 1, borderColor: '#f57c00', marginBottom: 10, justifyContent: 'center' },
-  gridButtonText: { fontSize: 11, fontWeight: 'bold', color: '#f57c00', textAlign: 'center' },
-  sectionDivider: { fontSize: 11, color: '#555', fontWeight: 'bold', marginBottom: 12, marginTop: 10, textTransform: 'uppercase' },
-  sectionCard: { backgroundColor: '#fff', padding: 16, borderRadius: 8, marginBottom: 15, borderLeftWidth: 5, borderLeftColor: '#f57c00' },
-  sectionTitle: { fontSize: 14, fontWeight: 'bold', color: '#f57c00', marginBottom: 8 },
-  sectionBody: { fontSize: 13, color: '#333', lineHeight: 20, textAlign: 'justify' },
-  buttonClose: { backgroundColor: '#212529', padding: 14, borderRadius: 8, alignItems: 'center', marginTop: 10 },
-  buttonText: { color: '#fff', fontWeight: 'bold', fontSize: 13 }
+  sommaireBox: { backgroundColor: '#fff', borderRadius: 8, padding: 16, marginBottom: 15, elevation: 1 },
+  sommaireTitle: { fontSize: 14, fontWeight: 'bold', color: '#212529' },
+  sommaireSubtitle: { fontSize: 12, color: '#6c757d', marginTop: 4, marginBottom: 15 },
+  gridContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  gridButton: { width: '48%', backgroundColor: '#fff', borderWidth: 1, borderColor: '#f57c00', borderRadius: 6, padding: 10, justifyContent: 'center' },
+  gridButtonText: { fontSize: 11, fontWeight: '600', color: '#f57c00', textAlign: 'center' },
+  sectionDivider: { fontSize: 11, fontWeight: 'bold', color: '#7f8c8d', marginVertical: 15, paddingHorizontal: 4 },
+  sectionCard: { backgroundColor: '#fff', borderRadius: 8, padding: 16, marginBottom: 15, borderLeftWidth: 5, borderLeftColor: '#f57c00', elevation: 1 },
+  sectionTitle: { fontSize: 15, fontWeight: 'bold', color: '#212529', marginBottom: 8 },
+  sectionBody: { fontSize: 13, color: '#495057', lineHeight: 20, textAlign: 'justify' },
+  buttonClose: { backgroundColor: '#212529', padding: 13, borderRadius: 8, alignItems: 'center', marginTop: 10 },
+  buttonText: { color: '#fff', fontWeight: 'bold', fontSize: 14 }
 });

@@ -1,3 +1,4 @@
+ import Feather from '@expo/vector-icons/Feather';
 import { useRouter } from 'expo-router';
 import React from 'react';
 import { SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -7,24 +8,24 @@ export default function ConsultesRecemmentScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* En-tête officiel */}
-      <View style={styles.headerBar}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Text style={styles.backArrow}>←</Text>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()}>
+          <Feather name="arrow-left" size={24} color="#212529" />
         </TouchableOpacity>
-        <Text style={styles.headerBarTitle}>Consultés récemment</Text>
+        <Text style={styles.headerTitle}>Consultés Récemment</Text>
       </View>
 
-      {/* Écran d'attente Jumia-Style (Vide par défaut) */}
-      <View style={styles.center}>
-        <Text style={styles.emptyIcon}>⏳</Text>
-        <Text style={styles.emptyTitle}>Votre historique est vide</Text>
-        <Text style={styles.emptySubtitle}>
-          Les articles des grossistes que vous visitez s'afficheront ici automatiquement pour vous permettre de les retrouver en un clic.
+      <View style={styles.content}>
+        <View style={styles.iconCircle}>
+          <Feather name="clock" size={45} color="#6c757d" />
+        </View>
+        <Text style={styles.title}>Votre historique est vide</Text>
+        <Text style={styles.subtitle}>
+          Les smartphones, tablettes et articles électroniques que vous visitez sur Jula s'afficheront ici automatiquement.
         </Text>
         
-        <TouchableOpacity style={styles.exploreButton} onPress={() => router.push('/')}>
-          <Text style={styles.exploreButtonText}>Continuer mes achats</Text>
+        <TouchableOpacity style={styles.btnAction} onPress={() => router.replace('/home')}>
+          <Text style={styles.btnText}>Parcourir le Catalogue</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -32,17 +33,13 @@ export default function ConsultesRecemmentScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f4f6f9' },
-  headerBar: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', paddingVertical: 15, paddingHorizontal: 15, borderBottomWidth: 1, borderBottomColor: '#e0e0e0' },
-  backButton: { marginRight: 15 },
-  backArrow: { fontSize: 22, color: '#333', fontWeight: 'bold' },
-  headerBarTitle: { fontSize: 18, fontWeight: 'bold', color: '#333' },
-  
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 25 },
-  emptyIcon: { fontSize: 60, marginBottom: 15 },
-  emptyTitle: { fontSize: 15, fontWeight: 'bold', color: '#333', textAlign: 'center', marginBottom: 8 },
-  emptySubtitle: { fontSize: 12, color: '#777', textAlign: 'center', lineHeight: 18, marginBottom: 20 },
-  
-  exploreButton: { backgroundColor: '#f57c00', paddingVertical: 12, paddingHorizontal: 25, borderRadius: 6 },
-  exploreButtonText: { color: '#fff', fontWeight: 'bold', fontSize: 13 }
+  container: { flex: 1, backgroundColor: '#f8f9fa' },
+  header: { flexDirection: 'row', alignItems: 'center', padding: 16, backgroundColor: '#fff', borderBottomWidth: 1, borderColor: '#dee2e6', paddingTop: 40, gap: 16 },
+  headerTitle: { fontSize: 18, fontWeight: 'bold', color: '#212529' },
+  content: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 32 },
+  iconCircle: { width: 90, height: 90, borderRadius: 45, backgroundColor: '#e9ecef', justifyContent: 'center', alignItems: 'center', marginBottom: 20 },
+  title: { fontSize: 19, fontWeight: 'bold', color: '#212529', marginBottom: 8 },
+  subtitle: { fontSize: 14, color: '#6c757d', textAlign: 'center', lineHeight: 22, marginBottom: 25 },
+  btnAction: { backgroundColor: '#212529', paddingVertical: 12, paddingHorizontal: 30, borderRadius: 25 },
+  btnText: { color: '#fff', fontWeight: 'bold', fontSize: 14 }
 });

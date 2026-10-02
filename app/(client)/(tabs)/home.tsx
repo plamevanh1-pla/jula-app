@@ -3,6 +3,8 @@ import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Image, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { supabase } from '../../../src/config/supabaseClient';
+// 🟢 IMPORTATION D'ASYNCSTORAGE POUR LIRE LE PAYS DU CLIENT EN DIRECT
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -11,9 +13,10 @@ export default function HomeScreen() {
   const [search, setSearch] = useState('');
   const [ad, setAd] = useState<any>(null);
 
-  // 🎛️ ÉTATS DES FILTRES BUDGET AVANCÉS
+  // 🎛️ ÉTATS DES FILTRES BUDGET ET PAYS AVANCÉS
   const [maxPrice, setMaxPrice] = useState<string>('');
   const [selectedCategoryKeyword, setSelectedCategoryKeyword] = useState<string>('');
+  const [countryFilter, setCountryFilter] = useState<string>('CI');
 
   const topCategories = [
     { id: '0', title: '🔄 Tout Voir', keyword: '' },
@@ -26,21 +29,33 @@ export default function HomeScreen() {
   ];
 
   useEffect(() => {
-    fetchProducts();
-    fetchActiveAd();
+    async function initHome() {
+      // 📡 Détecter instantanément le pays choisi par le client
+      const pays = await AsyncStorage.getItem('jula_pays_choisi') || 'CI';
+      setCountryFilter(pays);
+      fetchProducts(pays);
+      fetchActiveAd();
+    }
+    initHome();
   }, []);
 
-  const fetchProducts = async () => {
+  const fetchProducts = async (paysId: string) => {
     try {
       setLoading(true);
+      // 🔥 FILTRAGE INTERNATIONAL : Supabase ne renvoie que les produits de la région du client
       const { data, error } = await supabase
         .from('products')
         .select('*')
+        .eq('country', paysId)
         .order('created_at', { ascending: false });
+        
       if (error) throw error;
       if (data) setProducts(data);
     } catch (err: any) {
-      console.log("Erreur produits Jula:", err.message);
+      console.log("Erreur produits Jula filtrés:", err.message);
+      // Secours : si problème de colonne, charge l'ensemble du catalogue
+      const { data } = await supabase.from('products').select('*').order('created_at', { ascending: false });
+      if (data) setProducts(data);
     } finally {
       setLoading(false);
     }
@@ -193,7 +208,6 @@ export default function HomeScreen() {
             );
           })}
         </ScrollView>
-
         {loading ? (
           <ActivityIndicator size="large" color="#f57c00" style={{ marginTop: 40 }} />
         ) : (search.length > 0 || maxPrice.length > 0 || selectedCategoryKeyword !== '') ? (
