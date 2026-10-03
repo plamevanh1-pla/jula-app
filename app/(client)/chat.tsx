@@ -1,24 +1,24 @@
-import Feather from '@expo/vector-icons/Feather';
+ import Feather from '@expo/vector-icons/Feather';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 export default function ChatScreen() {
   const router = useRouter();
-  const [messages, setMessages] = useState([]); // Tableau vide pour le mode test initial
+  const [messages, setMessages] = useState([]); 
   const [inputText, setInputText] = useState('');
 
   const handleSend = () => {
     if (inputText.trim() === '') return;
-    // La logique d'envoi en direct vers Supabase Realtime viendra s'insérer ici
     setInputText('');
   };
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* En-tête Premium Jula Messagerie */}
+      {/* En-tête Jula Messagerie */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+        {/* 🟢 RECTIFIÉ : Forcer Expo Router à utiliser le retour natif ou à basculer de sécurité sur account */}
+        <TouchableOpacity onPress={() => router.canGoBack() ? router.back() : router.replace('/(client)/(tabs)/account')} style={styles.backBtn}>
           <Feather name="arrow-left" size={24} color="#212529" />
         </TouchableOpacity>
         <View>
@@ -27,26 +27,38 @@ export default function ChatScreen() {
         </View>
       </View>
 
-      {/* Zone d'affichage dynamique des messages */}
+      {/* Salons de discussion / Canaux */}
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <View style={styles.channelsBlock}>
+          <Text style={styles.channelLabel}>💬 Canaux d'assistance Jula</Text>
+          
+          <TouchableOpacity style={styles.channelItem} onPress={() => alert("Discussion avec le Support technique")}>
+            <View style={[styles.iconBox, { backgroundColor: '#e3f2fd' }]}><Text style={styles.channelIcon}>🛠️</Text></View>
+            <View style={{ flex: 1 }}><Text style={styles.channelName}>Support Jula</Text><Text style={styles.channelDesc}>Aide sur ton compte et tes portefeuilles</Text></View>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.channelItem} onPress={() => alert("Discussion avec la Logistique")}>
+            <View style={[styles.iconBox, { backgroundColor: '#e8f5e9' }]}><Text style={styles.channelIcon}>📦</Text></View>
+            <View style={{ flex: 1 }}><Text style={styles.channelName}>Logistique Jula</Text><Text style={styles.channelDesc}>Suivi d'expédition entre les 4 pays</Text></View>
+          </TouchableOpacity>
+        </View>
+
         {messages.length === 0 ? (
           <View style={styles.emptyContainer}>
             <View style={styles.iconCircle}>
-              <Feather name="mail" size={45} color="#6c757d" />
+              <Feather name="mail" size={40} color="#6c757d" />
             </View>
-            <Text style={styles.emptyTitle}>Votre boîte est vide</Text>
+            <Text style={styles.emptyTitle}>Aucun message privé</Text>
             <Text style={styles.emptySubtitle}>
-              Discutez en temps réel avec les grossistes de Côte d'Ivoire 🇨🇮, du Sénégal 🇸🇳, du Bénin 🇧🇯 et du Togo 🇹🇬 pour négocier vos prix !
+              Tes échanges en temps réel avec les grossistes d'Adjamé, Sandaga, Dantokpa ou Assigamé s'afficheront ici.
             </Text>
           </View>
         ) : (
-          <View>
-            {/* Le rendu visuel des messages arrivera ici */}
-          </View>
+          <View></View>
         )}
       </ScrollView>
 
-      {/* Barre de saisie inférieure */}
+      {/* Saisie inférieure */}
       <View style={styles.inputContainer}>
         <TextInput
           style={styles.input}
@@ -69,11 +81,18 @@ const styles = StyleSheet.create({
   backBtn: { padding: 2 },
   headerTitle: { fontSize: 17, fontWeight: 'bold', color: '#212529' },
   headerSubtitle: { fontSize: 11, color: '#f57c00', fontWeight: '600', marginTop: 1 },
-  scrollContent: { flexGrow: 1, justifyContent: 'center' },
-  emptyContainer: { alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32 },
-  iconCircle: { width: 90, height: 90, borderRadius: 45, backgroundColor: '#e9ecef', justifyContent: 'center', alignItems: 'center', marginBottom: 20 },
-  emptyTitle: { fontSize: 19, fontWeight: 'bold', color: '#212529', marginBottom: 8 },
-  emptySubtitle: { fontSize: 13, color: '#6c757d', textAlign: 'center', lineHeight: 20 },
+  scrollContent: { flexGrow: 1, padding: 16 },
+  channelsBlock: { backgroundColor: '#fff', borderRadius: 8, padding: 12, marginBottom: 20, borderWidth: 1, borderColor: '#dee2e6' },
+  channelLabel: { fontSize: 12, fontWeight: 'bold', color: '#7f8c8d', marginBottom: 12, textTransform: 'uppercase' },
+  channelItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, borderBottomWidth: 1, borderColor: '#f1f3f5', gap: 12 },
+  iconBox: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center' },
+  channelIcon: { fontSize: 18 },
+  channelName: { fontSize: 14, fontWeight: 'bold', color: '#212529' },
+  channelDesc: { fontSize: 11, color: '#7f8c8d', marginTop: 2 },
+  emptyContainer: { alignItems: 'center', justifyContent: 'center', marginTop: 30, paddingHorizontal: 16 },
+  iconCircle: { width: 80, height: 80, borderRadius: 40, backgroundColor: '#e9ecef', justifyContent: 'center', alignItems: 'center', marginBottom: 16 },
+  emptyTitle: { fontSize: 16, fontWeight: 'bold', color: '#212529', marginBottom: 6 },
+  emptySubtitle: { fontSize: 12, color: '#6c757d', textAlign: 'center', lineHeight: 18 },
   inputContainer: { flexDirection: 'row', padding: 12, backgroundColor: '#fff', borderTopWidth: 1, borderColor: '#dee2e6', alignItems: 'center', gap: 10 },
   input: { flex: 1, backgroundColor: '#f1f3f5', borderRadius: 20, paddingHorizontal: 16, height: 40, fontSize: 14, color: '#212529' },
   sendBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#f57c00', justifyContent: 'center', alignItems: 'center' }

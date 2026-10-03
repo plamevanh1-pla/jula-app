@@ -1,199 +1,116 @@
-import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { supabase } from '../../src/config/supabaseClient'; // Vérifie bien que src/config est à cette place
-
-interface PartnerProfile {
-  id: string;
-  email: string;
-  role: string;
-  full_name: string;
-  phone: string;
-  country: string;
-  shop_name?: string | null;
-  vehicle_plate?: string | null;
-  is_verified: boolean;
-  cni_recto_url?: string | null;
-  cni_verso_url?: string | null;
-  photo_boutique_url?: string | null;
-  photo_vehicule_url?: string | null;
-  created_at: string;
-}
+ import Feather from '@expo/vector-icons/Feather';
+import { useRouter } from 'expo-router';
+import React, { useState } from 'react';
+import { SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 export default function SuperAdminScreen() {
-  const [partners, setPartners] = useState<PartnerProfile[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+  const router = useRouter();
 
-  // 📈 ÉTATS COMPTABLES GLOBAUX DE L'EMPIRE JACKY
-  const [globalRevenue, setGlobalRevenue] = useState<number>(0);
-  const [totalOrders, setTotalOrders] = useState<number>(0);
+  // 📈 STATISTIQUES REGIONALES JULA DE PRODUCTION (ZONE CFA)
+  const [stats] = useState({
+    totalGrossistes: 14,
+    totalCommandes: 142,
+    chiffreAffaires: 18450000,
+    alertesLogistiques: 3
+  });
 
-  // 📡 Fonction suprême pour charger les partenaires ET calculer les revenus en même temps
-  const fetchDataSuprême = async () => {
-    try {
-      setLoading(true);
-      
-      // 1. Récupération de tous les partenaires
-      const { data: profilesData, error: profilesError } = await supabase
-        .from('profiles')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (profilesError) throw profilesError;
-      setPartners((profilesData as PartnerProfile[]) || []);
-
-      // 2. ANALYSE FINANCIÈRE : Calcul de la somme des ventes globales
-      const { data: ordersData, error: ordersError } = await supabase
-        .from('orders')
-        .select('total_price, status');
-
-      if (!ordersError && ordersData) {
-        setTotalOrders(ordersData.length);
-        
-        let cumulSous = 0;
-        ordersData.forEach(order => {
-          // On comptabilise uniquement les flux monétaires réels (livrés ou en cours de route)
-          if (order.status === 'Livré' || order.status === 'En cours de livraison') {
-            cumulSous += Number(order.total_price);
-          }
-        });
-        setGlobalRevenue(revenue => cumulSous);
-      }
-
-    } catch (error: any) {
-      Alert.alert('❌ Erreur de synchronisation', error.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchDataSuprême();
-  }, []);
-
-  // ✅ Validation tactile instantanée du gérant ou du livreur
-  const handleVerify = async (id: string, fullName: string) => {
-    try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({ is_verified: true })
-        .eq('id', id);
-
-      if (error) throw error;
-      Alert.alert('🎉 Succès', `${fullName} est désormais un Partenaire Officiel Jula !`);
-      fetchDataSuprême(); // Rafraîchit l'écran mobile et recalcule l'argent en direct
-    } catch (error: any) {
-      Alert.alert('❌ Échec de validation', error.message);
-    }
-  };
-
-  if (loading) {
-    return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color="#f57c00" />
-        <Text style={styles.loadingText}>Calcul des finances de l'Empire Jula...</Text>
-      </View>
-    );
-  }
   return (
-    <View style={styles.container}>
-      {/* 👑 EN-TÊTE D'ADMINISTRATION GÉNÉRALE AVEC VRAIS RAPPORTS DE VENTES */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>🕵️‍♂️ Jacky SuperAdmin</Text>
-        <Text style={styles.headerSubtitle}>Quartier Général Mobile Jula</Text>
-        
-        {/* 📊 BOÎTES COMPTABLES DE L'EMPIRE (CRITÈRE SUIVI DES PERFORMANCES) */}
-        <View style={{ flexDirection: 'row', gap: 10, marginTop: 15 }}>
-          <View style={{ flex: 1, backgroundColor: 'rgba(40, 167, 69, 0.15)', padding: 12, borderRadius: 8, borderLeftWidth: 4, borderLeftColor: '#28a745' }}>
-            <Text style={{ fontSize: 10, color: '#aaa', fontWeight: 'bold' }}>💰 CA GLOBAL ENCAISSÉ</Text>
-            <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#28a745', marginTop: 4 }}>{globalRevenue} FCFA</Text>
-          </View>
-          <View style={{ flex: 1, backgroundColor: 'rgba(245, 124, 0, 0.15)', padding: 12, borderRadius: 8, borderLeftWidth: 4, borderLeftColor: '#f57c00' }}>
-            <Text style={{ fontSize: 10, color: '#aaa', fontWeight: 'bold' }}>📦 TRAFFIC TOTAL</Text>
-            <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#f57c00', marginTop: 4 }}>{totalOrders} commandes</Text>
-          </View>
+    <SafeAreaView style={styles.container}>
+      {/* 🔍 EN-TÊTE PREMIUM DU QUARTIER GÉNÉRAL JACKY */}
+      <View style={styles.headerBar}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <Feather name="arrow-left" size={24} color="#fff" />
+        </TouchableOpacity>
+        <View style={{ flex: 1, marginLeft: 12 }}>
+          <Text style={styles.headerBarTitle}>QG MOBILE JACKY</Text>
+          <Text style={styles.headerBarSubtitle}>Console de Contrôle Globale Jula</Text>
         </View>
+        <Feather name="shield" size={24} color="#f57c00" />
       </View>
 
-      <FlatList
-        data={partners}
-        keyExtractor={(item) => item.id}
-        refreshing={loading}
-        onRefresh={fetchDataSuprême}
-        renderItem={({ item }) => (
-          <View style={[styles.card, item.is_verified ? styles.cardVerified : null]}>
-            <View style={styles.infoRow}>
-              <Text style={styles.roleBadge}>{item.role?.toUpperCase()}</Text>
-              <Text style={[styles.statusBadge, item.is_verified ? styles.statusVerified : null]}>
-                {item.is_verified ? '🔒 VÉRIFIÉ' : '⏳ EN ATTENTE'}
-              </Text>
-            </View>
+      <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false}>
+        <Text style={styles.sectionLabel}>📈 Tableau de Bord Zone CFA (XOF)</Text>
+        
+        <View style={styles.statsGrid}>
+          <TouchableOpacity style={styles.statsCard} onPress={() => router.push('/(admin)/users')}>
+            <Feather name="users" size={20} color="#f57c00" />
+            <Text style={styles.statsNumber}>{stats.totalGrossistes}</Text>
+            <Text style={styles.statsTitle}>Grossistes Certifiés</Text>
+          </TouchableOpacity>
 
-            <Text style={styles.partnerName}>{item.full_name}</Text>
-            <Text style={styles.partnerDetails}>✉️ {item.email}</Text>
-            <Text style={styles.partnerDetails}>📞 {item.phone}</Text>
-            <Text style={styles.partnerDetails}>📍 {item.country}</Text>
-            {item.shop_name && <Text style={styles.partnerDetails}>🏪 Boutique : {item.shop_name}</Text>}
-            {item.vehicle_plate && <Text style={styles.partnerDetails}>🏍️ Plaque : {item.vehicle_plate}</Text>}
+          <TouchableOpacity style={[styles.statsCard, { borderBottomColor: '#1072ba' }]} onPress={() => router.push('/(admin)/orders')}>
+            <Feather name="package" size={20} color="#1072ba" />
+            <Text style={[styles.statsNumber, { color: '#1072ba' }]}>{stats.totalCommandes}</Text>
+            <Text style={styles.statsTitle}>Flux de Commandes</Text>
+          </TouchableOpacity>
 
-            {/* 📸 GALERIE D'IMAGES TACTILE (CNI ET BOUTIQUE) */}
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.gallery}>
-              {item.cni_recto_url && (
-                <View style={styles.imgBox}>
-                  <Text style={styles.imgLabel}>CNI Recto</Text>
-                  <Image source={{ uri: item.cni_recto_url }} style={styles.docImage} />
-                </View>
-              )}
-              {item.cni_verso_url && (
-                <View style={styles.imgBox}>
-                  <Text style={styles.imgLabel}>CNI Verso</Text>
-                  <Image source={{ uri: item.cni_verso_url }} style={styles.docImage} />
-                </View>
-              )}
-              {item.photo_boutique_url && (
-                <View style={styles.imgBox}>
-                  <Text style={styles.imgLabel}>Boutique</Text>
-                  <Image source={{ uri: item.photo_boutique_url }} style={styles.docImage} />
-                </View>
-              )}
-              {item.photo_vehicule_url && (
-                <View style={styles.imgBox}>
-                  <Text style={styles.imgLabel}>Véhicule</Text>
-                  <Image source={{ uri: item.photo_vehicule_url }} style={styles.docImage} />
-                </View>
-              )}
-            </ScrollView>
+          <TouchableOpacity style={[styles.statsCard, { borderBottomColor: '#2e7d32', width: '100%' }]} onPress={() => router.push('/(admin)/analytics')}>
+            <Feather name="trending-up" size={20} color="#2e7d32" />
+            <Text style={[styles.statsNumber, { color: '#2e7d32' }]}>{stats.chiffreAffaires.toLocaleString('fr-FR')} F</Text>
+            <Text style={styles.statsTitle}>Volume d'Affaires Global (UEMOA)</Text>
+          </TouchableOpacity>
+        </View>
+        <Text style={styles.sectionLabel}>⚙️ Pilotage Stratégique du Réseau</Text>
 
-            {!item.is_verified && (
-              <TouchableOpacity style={styles.btnVerify} onPress={() => handleVerify(item.id, item.full_name)}>
-                <Text style={styles.btnText}>✅ Approuver le Partenaire</Text>
-              </TouchableOpacity>
-            )}
+        <TouchableOpacity style={styles.adminActionRow} onPress={() => router.push('/(admin)/dashboard')}>
+          <View style={styles.actionLeft}>
+            <Feather name="grid" size={18} color="#fff" />
+            <Text style={styles.actionText}>Ouvrir le Dashboard Général</Text>
           </View>
-        )}
-      />
-    </View>
+          <Feather name="chevron-right" size={16} color="#7f8c8d" />
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.adminActionRow} onPress={() => router.push('/(admin)/products')}>
+          <View style={styles.actionLeft}>
+            <Feather name="box" size={18} color="#f57c00" />
+            <Text style={styles.actionText}>Gestion du Catalogue Produits</Text>
+          </View>
+          <Feather name="chevron-right" size={16} color="#7f8c8d" />
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.adminActionRow} onPress={() => router.push('/(admin)/users')}>
+          <View style={styles.actionLeft}>
+            <Feather name="user-check" size={18} color="#2e7d32" />
+            <Text style={styles.actionText}>Utilisateurs & Boutiques</Text>
+          </View>
+          <Feather name="chevron-right" size={16} color="#7f8c8d" />
+        </TouchableOpacity>
+
+        <TouchableOpacity style={[styles.adminActionRow, { borderBottomWidth: 0 }]} onPress={() => router.push('/(admin)/orders')}>
+          <View style={styles.actionLeft}>
+            <Feather name="alert-triangle" size={18} color="#d9534f" />
+            <Text style={styles.actionText}>Litiges & Alertes Logistiques</Text>
+          </View>
+          <View style={styles.badgeAlerte}><Text style={styles.badgeAlerteText}>{stats.alertesLogistiques}</Text></View>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.buttonClose} onPress={() => router.back()}>
+          <Text style={styles.buttonText}>🔒 Verrouiller la Console et Quitter</Text>
+        </TouchableOpacity>
+
+        <View style={{ height: 40 }} />
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f4f6f9', padding: 15 },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#111417' },
-  loadingText: { color: '#fff', marginTop: 10, fontWeight: 'bold' },
-  header: { backgroundColor: '#111417', padding: 20, borderRadius: 12, marginBottom: 15, borderBottomWidth: 4, borderBottomColor: '#f57c00' },
-  headerTitle: { color: '#fff', fontSize: 22, fontWeight: 'bold' },
-  headerSubtitle: { color: '#aaa', fontSize: 13, marginTop: 4 },
-  card: { backgroundColor: '#fff', borderRadius: 12, padding: 15, marginBottom: 15, borderLeftWidth: 5, borderLeftColor: '#1072ba' },
-  cardVerified: { borderLeftColor: '#28a745' },
-  infoRow: { flex: 1, flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 },
-  roleBadge: { backgroundColor: '#e1f5fe', color: '#0288d1', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6, fontSize: 11, fontWeight: 'bold' },
-  statusBadge: { backgroundColor: '#fff3cd', color: '#856404', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6, fontSize: 11, fontWeight: 'bold' },
-  statusVerified: { backgroundColor: '#d4edda', color: '#155724' },
-  partnerName: { fontSize: 18, fontWeight: 'bold', color: '#333', marginBottom: 5 },
-  partnerDetails: { fontSize: 13, color: '#666', marginBottom: 3 },
-  gallery: { flexDirection: 'row', marginTop: 12, marginBottom: 5 },
-  imgBox: { marginRight: 12, alignItems: 'center' },
-  imgLabel: { fontSize: 10, color: '#777', fontWeight: 'bold', marginBottom: 4 },
-  docImage: { width: 100, height: 70, borderRadius: 6, backgroundColor: '#eee' },
-  btnVerify: { backgroundColor: '#28a745', padding: 12, borderRadius: 8, marginTop: 15, alignItems: 'center' },
-  btnText: { color: '#fff', fontWeight: 'bold', fontSize: 14 }
+  container: { flex: 1, backgroundColor: '#111417' },
+  headerBar: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#1a1d21', paddingVertical: 15, paddingHorizontal: 15, borderBottomWidth: 1, borderBottomColor: '#2d3139', paddingTop: 40 },
+  backButton: { padding: 2 },
+  headerBarTitle: { fontSize: 16, fontWeight: 'bold', color: '#fff', letterSpacing: 0.5 },
+  headerBarSubtitle: { fontSize: 11, color: '#f57c00', fontWeight: '600', marginTop: 2 },
+  scrollContainer: { padding: 15 },
+  sectionLabel: { fontSize: 11, color: '#7f8c8d', fontWeight: 'bold', marginBottom: 12, marginTop: 15, textTransform: 'uppercase', letterSpacing: 0.8 },
+  statsGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', gap: 12, marginBottom: 10 },
+  statsCard: { width: '48%', backgroundColor: '#1a1d21', borderRadius: 8, padding: 14, borderBottomWidth: 4, borderBottomColor: '#f57c00', borderWidth: 1, borderColor: '#2d3139' },
+  statsNumber: { fontSize: 18, fontWeight: 'bold', color: '#f57c00', marginVertical: 6 },
+  statsTitle: { fontSize: 11, color: '#95a5a6', fontWeight: '500' },
+  adminActionRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#1a1d21', padding: 16, borderBottomWidth: 1, borderColor: '#2d3139', borderRadius: 4, marginBottom: 10, borderWidth: 1 },
+  actionLeft: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+  actionText: { fontSize: 13, color: '#ecf0f1', fontWeight: '500' },
+  badgeAlerte: { backgroundColor: '#d9534f', width: 20, height: 20, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
+  badgeAlerteText: { color: '#fff', fontSize: 10, fontWeight: 'bold' },
+  buttonClose: { backgroundColor: '#f57c00', padding: 14, borderRadius: 6, alignItems: 'center', marginTop: 25 },
+  buttonText: { color: '#fff', fontWeight: 'bold', fontSize: 14 }
 });

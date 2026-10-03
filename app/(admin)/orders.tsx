@@ -1,3 +1,4 @@
+import Feather from '@expo/vector-icons/Feather';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -14,6 +15,7 @@ export default function AdminOrdersScreen() {
 
   const fetchAllOrders = async () => {
     try {
+      if (!supabase) return;
       const { data, error } = await supabase
         .from('orders')
         .select('*')
@@ -31,7 +33,7 @@ export default function AdminOrdersScreen() {
   const handleEditOrderStatus = (orderId: number, currentStatus: string) => {
     Alert.alert(
       "Modifier la commande",
-      `Statut actuel : ${currentStatus}`,
+      `Statut actuel : ${currentStatus || 'En attente'}`,
       [
         { text: "Annuler", style: "cancel" },
         { text: "Mettre En Attente", onPress: () => updateStatus(orderId, 'en_attente') },
@@ -57,46 +59,53 @@ export default function AdminOrdersScreen() {
   };
 
   const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'livré': return { label: 'Livré', color: '#155724', bg: '#d4edda' };
-      case 'en_cours': return { label: 'En cours', color: '#856404', bg: '#fff3cd' };
+    const check = status?.toLowerCase();
+    switch (check) {
+      case 'livré':
+      case 'livre': 
+        return { label: 'Livré', color: '#2e7d32', bg: 'rgba(46, 125, 50, 0.15)' };
+      case 'en_cours': 
+        return { label: 'En cours', color: '#f57c00', bg: 'rgba(245, 124, 0, 0.15)' };
       case 'en_attente':
       default:
-        return { label: 'En attente', color: '#721c24', bg: '#f8d7da' };
+        return { label: 'En attente', color: '#d9534f', bg: 'rgba(217, 83, 79, 0.15)' };
     }
   };
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* En-tête Admin */}
-      <View style={styles.header}>
+      {/* Barre d'en-tête officielle du QG */}
+      <View style={styles.headerBar}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Text style={styles.backText}>⬅ Retour</Text>
+          <Feather name="arrow-left" size={24} color="#fff" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Suivi Global des Ventes</Text>
-        <View style={{ width: 60 }} />
+        <View style={{ flex: 1, marginLeft: 12 }}>
+          <Text style={styles.headerBarTitle}>SUIVI DES VENTES</Text>
+          <Text style={styles.headerBarSubtitle}>Flux de commandes zone CFA</Text>
+        </View>
+        <Feather name="activity" size={20} color="#1072ba" />
       </View>
 
       {loading ? (
         <View style={styles.center}>
-          <ActivityIndicator size="large" color="#212529" />
+          <ActivityIndicator size="large" color="#f57c00" />
         </View>
       ) : (
         <FlatList
           data={orders}
-          keyExtractor={(item) => item.id.toString()}
+          keyExtractor={(item) => item.id?.toString()}
           contentContainerStyle={styles.list}
+          showsVerticalScrollIndicator={false}
           ListEmptyComponent={
-            <Text style={styles.emptyText}>Aucune commande enregistrée sur Jula.</Text>
+            <Text style={styles.emptyText}>Aucune commande enregistrée sur Jula pour l'instant.</Text>
           }
           renderItem={({ item }) => {
             const statusInfo = getStatusColor(item.status);
-            const date = new Date(item.created_at).toLocaleDateString('fr-FR');
-
+            const date = item.created_at ? new Date(item.created_at).toLocaleDateString('fr-FR') : '--/--/----';
             return (
               <View style={styles.orderCard}>
                 <View style={styles.cardHeader}>
-                  <Text style={styles.orderId}>Commande #{item.id.toString().substring(0, 8).toUpperCase()}</Text>
+                  <Text style={styles.orderId}>Commande #{item.id?.toString().substring(0, 8).toUpperCase() || 'ID'}</Text>
                   <Text style={styles.orderDate}>{date}</Text>
                 </View>
 
@@ -104,9 +113,10 @@ export default function AdminOrdersScreen() {
 
                 {/* Coordonnées logistiques stockées sur Supabase */}
                 <View style={styles.detailsBox}>
-                  <Text style={styles.detailsText}>📞 Client : {item.delivery_phone}</Text>
-                  <Text style={styles.detailsText}>📍 Destination : {item.delivery_city}, {item.delivery_neighborhood}</Text>
-                  <Text style={styles.detailsText}>💳 Paiement : {item.payment_method}</Text>
+                  <Text style={styles.detailsText}>👤 Destinataire : {item.delivery_name || 'Non spécifié'}</Text>
+                  <Text style={styles.detailsText}>📞 Client : {item.delivery_phone || 'Pas de numéro'}</Text>
+                  <Text style={styles.detailsText}>📍 Destination : {item.delivery_city || 'Pays'}, {item.delivery_neighborhood || 'Quartier'}</Text>
+                  <Text style={styles.detailsText}>💳 Mode de Paiement : {item.payment_method || 'Mobile Money'}</Text>
                 </View>
 
                 <View style={styles.divider} />
@@ -115,7 +125,7 @@ export default function AdminOrdersScreen() {
                   <View style={[styles.statusBadge, { backgroundColor: statusInfo.bg }]}>
                     <Text style={[styles.statusText, { color: statusInfo.color }]}>{statusInfo.label}</Text>
                   </View>
-                  <Text style={styles.orderPrice}>{item.total_amount.toLocaleString()} FCFA</Text>
+                  <Text style={styles.orderPrice}>{Number(item.total_amount || 0).toLocaleString('fr-FR')} FCFA</Text>
                 </View>
 
                 <TouchableOpacity 
@@ -134,25 +144,26 @@ export default function AdminOrdersScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f8f9fa' },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, backgroundColor: '#212529', borderBottomWidth: 1, borderColor: '#343a40' },
-  backButton: { padding: 4 },
-  backText: { fontSize: 15, color: '#fff', fontWeight: '500' },
-  headerTitle: { fontSize: 18, fontWeight: 'bold', color: '#fff' },
-  list: { padding: 16 },
-  emptyText: { textAlign: 'center', color: '#6c757d', marginTop: 40, fontSize: 14 },
-  orderCard: { backgroundColor: '#fff', borderRadius: 8, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: '#dee2e6' },
+  container: { flex: 1, backgroundColor: '#111417' },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#111417' },
+  headerBar: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#1a1d21', paddingVertical: 15, paddingHorizontal: 15, borderBottomWidth: 1, borderBottomColor: '#2d3139', paddingTop: 40 },
+  backButton: { padding: 2 },
+  headerBarTitle: { fontSize: 16, fontWeight: 'bold', color: '#fff', letterSpacing: 0.5 },
+  headerBarSubtitle: { fontSize: 11, color: '#f57c00', fontWeight: '600', marginTop: 2 },
+  
+  list: { padding: 15 },
+  emptyText: { textAlign: 'center', color: '#7f8c8d', marginTop: 40, fontSize: 13, fontWeight: '500' },
+  orderCard: { backgroundColor: '#1a1d21', borderRadius: 8, padding: 16, marginBottom: 15, borderWidth: 1, borderColor: '#2d3139' },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  orderId: { fontSize: 15, fontWeight: 'bold', color: '#212529' },
-  orderDate: { fontSize: 12, color: '#6c757d' },
-  divider: { height: 1, backgroundColor: '#f1f3f5', marginVertical: 12 },
-  detailsBox: { gap: 4 },
-  detailsText: { fontSize: 14, color: '#495057' },
+  orderId: { fontSize: 14, fontWeight: 'bold', color: '#fff' },
+  orderDate: { fontSize: 11, color: '#7f8c8d' },
+  divider: { height: 1, backgroundColor: '#2d3139', marginVertical: 12 },
+  detailsBox: { gap: 6 },
+  detailsText: { fontSize: 13, color: '#ecf0f1' },
   cardFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 4 },
-  statusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
+  statusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 4 },
   statusText: { fontSize: 11, fontWeight: 'bold' },
-  orderPrice: { fontSize: 16, fontWeight: 'bold', color: '#212529' },
-  actionButton: { padding: 10, borderRadius: 6, borderWidth: 1, borderColor: '#ced4da', alignItems: 'center', marginTop: 14, backgroundColor: '#f8f9fa' },
-  actionButtonText: { color: '#495057', fontSize: 13, fontWeight: '600' }
+  orderPrice: { fontSize: 15, fontWeight: 'bold', color: '#f57c00' },
+  actionButton: { padding: 12, borderRadius: 4, borderWidth: 1, borderColor: '#2d3139', alignItems: 'center', marginTop: 14, backgroundColor: '#111417' },
+  actionButtonText: { color: '#ecf0f1', fontSize: 12, fontWeight: '600' }
 });

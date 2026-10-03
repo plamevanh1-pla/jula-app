@@ -1,152 +1,217 @@
+ import Feather from '@expo/vector-icons/Feather';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { supabase } from '../../src/config/supabaseClient';
 
-export default function AdminUsersScreen() {
-  const [users, setUsers] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+interface PartnerProfile {
+  id: string;
+  email: string;
+  role: string;
+  full_name: string;
+  phone: string;
+  country: string;
+  shop_name?: string | null;
+  vehicle_plate?: string | null;
+  is_verified: boolean;
+  cni_recto_url?: string | null;
+  cni_verso_url?: string | null;
+  photo_boutique_url?: string | null;
+  photo_vehicule_url?: string | null;
+  created_at: string;
+}
+
+export default function UsersAdminScreen() {
   const router = useRouter();
+  const [partners, setPartners] = useState<PartnerProfile[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
 
-  useEffect(() => {
-    fetchAllUsers();
-  }, []);
+  // 📈 ÉTATS COMPTABLES GLOBAUX DE L'EMPIRE JACKY
+  const [globalRevenue, setGlobalRevenue] = useState<number>(0);
+  const [totalOrders, setTotalOrders] = useState<number>(0);
 
-  const fetchAllUsers = async () => {
+  const fetchDataSuprême = async () => {
     try {
-      const { data, error } = await supabase
+      setLoading(true);
+      if (!supabase) return;
+      
+      // 1. Récupération de tous les partenaires
+      const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      setUsers(data || []);
+      if (profilesError) throw profilesError;
+      setPartners((profilesData as PartnerProfile[]) || []);
+
+      // 2. ANALYSE FINANCIÈRE : Calcul de la somme des ventes globales
+      const { data: ordersData, error: ordersError } = await supabase
+        .from('orders')
+        .select('total_price, status');
+
+      if (!ordersError && ordersData) {
+        setTotalOrders(ordersData.length);
+        
+        let cumulSous = 0;
+        ordersData.forEach(order => {
+          if (order.status === 'Livré' || order.status === 'En cours de livraison') {
+            cumulSous += Number(order.total_price);
+          }
+        });
+        setGlobalRevenue(cumulSous);
+      }
     } catch (error: any) {
-      console.error("Erreur utilisateurs admin:", error.message);
+      Alert.alert('❌ Erreur de synchronisation', error.message);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleModerateUser = (userId: string, currentRole: string, name: string) => {
-    Alert.alert(
-      "Modération du compte",
-      `Gestion des droits pour : ${name || 'Utilisateur'} (${currentRole})`,
-      [
-        { text: "Annuler", style: "cancel" },
-        {
-          text: "Changer en Vendeur",
-          onPress: () => updateUserRole(userId, 'seller')
-        },
-        {
-          text: "Changer en Client",
-          onPress: () => updateUserRole(userId, 'client')
-        }
-      ]
-    );
-  };
+  useEffect(() => {
+    fetchDataSuprême();
+  }, []);
 
-  const updateUserRole = async (userId: string, newRole: string) => {
+  const handleVerify = async (id: string, fullName: string) => {
     try {
       const { error } = await supabase
         .from('profiles')
-        .update({ role: newRole })
-        .eq('id', userId);
+        .update({ is_verified: true })
+        .eq('id', id);
 
       if (error) throw error;
-      
-      Alert.alert("Mis à jour", "Le rôle de l'utilisateur a été modifié avec succès.");
-      fetchAllUsers(); // Recharger la liste
+      Alert.alert('🎉 Succès', `${fullName} est désormais un Partenaire Officiel Jula !`);
+      fetchDataSuprême(); 
     } catch (error: any) {
-      Alert.alert("Erreur", "Impossible de modifier les droits : " + error.message);
+      Alert.alert('❌ Échec de validation', error.message);
     }
   };
 
-  const getRoleBadgeStyle = (role: string) => {
-    switch (role) {
-      case 'admin': return { label: 'ADMIN', color: '#7f1d1d', bg: '#fee2e2' };
-      case 'seller': return { label: 'VENDEUR', color: '#b45309', bg: '#fef3c7' };
-      case 'client':
-      default:
-        return { label: 'CLIENT', color: '#1e3a8a', bg: '#dbeafe' };
-    }
-  };
+  if (loading) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator size="large" color="#f57c00" />
+        <Text style={styles.loadingText}>Calcul des finances de l'Empire Jula...</Text>
+      </View>
+    );
+  }
 
   return (
-    <SafeAreaView style={styles.container}>
-      {/* En-tête Admin */}
-      <View style={styles.header}>
+    <View style={styles.container}>
+      {/* 👑 BARRE DE RETOUR SUPÉRIEURE RECTIFIÉE POUR ÉVITER LE CRASH */}
+      <View style={styles.topHeaderBar}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Text style={styles.backText}>⬅ Retour</Text>
+          <Feather name="arrow-left" size={24} color="#fff" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Gestion des Membres</Text>
-        <View style={{ width: 60 }} />
+        <Text style={styles.topHeaderTitle}>Utilisateurs & Boutiques</Text>
       </View>
 
-      {loading ? (
-        <View style={styles.center}>
-          <ActivityIndicator size="large" color="#212529" />
+      {/* 👑 EN-TÊTE D'ADMINISTRATION FINANCIÈRE */}
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>🕵️‍♂️ Jacky SuperAdmin</Text>
+        <Text style={styles.headerSubtitle}>Gestion des Marchands & Livreurs Jula</Text>
+        
+        <View style={{ flexDirection: 'row', gap: 10, marginTop: 15 }}>
+          <View style={styles.financeBoxGreen}>
+            <Text style={styles.financeLabel}>💰 CA ENCAISSÉ</Text>
+            <Text style={styles.financeValue}>{globalRevenue.toLocaleString('fr-FR')} F</Text>
+          </View>
+          <View style={styles.financeBoxOrange}>
+            <Text style={styles.financeLabel}>📦 FLUX TRAFFIC</Text>
+            <Text style={styles.financeValue}>{totalOrders} commandes</Text>
+          </View>
         </View>
-      ) : (
-        <FlatList
-          data={users}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.list}
-          ListEmptyComponent={
-            <Text style={styles.emptyText}>Aucun utilisateur trouvé sur la plateforme Jula.</Text>
-          }
-          renderItem={({ item }) => {
-            const badge = getRoleBadgeStyle(item.role);
-            const date = new Date(item.created_at).toLocaleDateString('fr-FR');
+      </View>
 
-            return (
-              <View style={styles.userCard}>
-                <View style={styles.userInfo}>
-                  <Text style={styles.userName}>{item.full_name || "Sans nom"}</Text>
-                  <Text style={styles.userEmail}>{item.email}</Text>
-                  <Text style={styles.userDate}>Inscrit le : {date}</Text>
-                </View>
+      <FlatList
+        data={partners}
+        keyExtractor={(item) => item.id}
+        refreshing={loading}
+        onRefresh={fetchDataSuprême}
+        showsVerticalScrollIndicator={false}
+        renderItem={({ item }) => (
+          <View style={[styles.card, item.is_verified ? styles.cardVerified : null]}>
+            <View style={styles.infoRow}>
+              <Text style={styles.roleBadge}>{item.role?.toUpperCase() || 'CLIENT'}</Text>
+              <Text style={[styles.statusBadge, item.is_verified ? styles.statusVerified : null]}>
+                {item.is_verified ? '🔒 VÉRIFIÉ' : '⏳ EN ATTENTE'}
+              </Text>
+            </View>
 
-                <View style={styles.actionsColumn}>
-                  <View style={[styles.roleBadge, { backgroundColor: badge.bg }]}>
-                    <Text style={[styles.roleText, { color: badge.color }]}>{badge.label}</Text>
-                  </View>
-                  
-                  {item.role !== 'admin' && (
-                    <TouchableOpacity 
-                      style={styles.moderateButton}
-                      onPress={() => handleModerateUser(item.id, item.role, item.full_name)}
-                    >
-                      <Text style={styles.moderateButtonText}>Gérer</Text>
-                    </TouchableOpacity>
-                  )}
+            <Text style={styles.partnerName}>{item.full_name || 'Utilisateur Anonyme'}</Text>
+            <Text style={styles.partnerDetails}>✉️ {item.email}</Text>
+            <Text style={styles.partnerDetails}>📞 {item.phone || 'Pas de numéro'}</Text>
+            <Text style={styles.partnerDetails}>📍 Pays : {item.country || 'Non spécifié'}</Text>
+            {item.shop_name && <Text style={styles.partnerDetails}>🏪 Boutique : {item.shop_name}</Text>}
+            {item.vehicle_plate && <Text style={styles.partnerDetails}>🏍️ Plaque : {item.vehicle_plate}</Text>}
+            {/* 📸 GALERIE D'IMAGES TACTILE (CNI ET BOUTIQUE) */}
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.gallery}>
+              {item.cni_recto_url && (
+                <View style={styles.imgBox}>
+                  <Text style={styles.imgLabel}>CNI Recto</Text>
+                  <Image source={{ uri: item.cni_recto_url }} style={styles.docImage} />
                 </View>
-              </View>
-            );
-          }}
-        />
-      )}
-    </SafeAreaView>
+              )}
+              {item.cni_verso_url && (
+                <View style={styles.imgBox}>
+                  <Text style={styles.imgLabel}>CNI Verso</Text>
+                  <Image source={{ uri: item.cni_verso_url }} style={styles.docImage} />
+                </View>
+              )}
+              {item.photo_boutique_url && (
+                <View style={styles.imgBox}>
+                  <Text style={styles.imgLabel}>Boutique</Text>
+                  <Image source={{ uri: item.photo_boutique_url }} style={styles.docImage} />
+                </View>
+              )}
+              {item.photo_vehicule_url && (
+                <View style={styles.imgBox}>
+                  <Text style={styles.imgLabel}>Véhicule</Text>
+                  <Image source={{ uri: item.photo_vehicule_url }} style={styles.docImage} />
+                </View>
+              )}
+            </ScrollView>
+
+            {!item.is_verified && (
+              <TouchableOpacity style={styles.btnVerify} onPress={() => handleVerify(item.id, item.full_name)}>
+                <Text style={styles.btnText}>✅ Approuver le Partenaire</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        )}
+      />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f8f9fa' },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, backgroundColor: '#212529', borderBottomWidth: 1, borderColor: '#343a40' },
-  backButton: { padding: 4 },
-  backText: { fontSize: 15, color: '#fff', fontWeight: '500' },
-  headerTitle: { fontSize: 18, fontWeight: 'bold', color: '#fff' },
-  list: { padding: 16 },
-  emptyText: { textAlign: 'center', color: '#6c757d', marginTop: 40, fontSize: 14 },
-  userCard: { flexDirection: 'row', backgroundColor: '#fff', borderRadius: 8, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: '#dee2e6', alignItems: 'center' },
-  userInfo: { flex: 1, gap: 4 },
-  userName: { fontSize: 16, fontWeight: 'bold', color: '#212529' },
-  userEmail: { fontSize: 13, color: '#495057' },
-  userDate: { fontSize: 11, color: '#868e96' },
-  actionsColumn: { alignItems: 'flex-end', gap: 10, marginLeft: 12 },
-  roleBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
-  roleText: { fontSize: 10, fontWeight: 'bold' },
-  moderateButton: { paddingVertical: 6, paddingHorizontal: 12, borderRadius: 4, backgroundColor: '#e9ecef', borderWidth: 1, borderColor: '#ced4da' },
-  moderateButtonText: { color: '#495057', fontSize: 12, fontWeight: '600' }
+  container: { flex: 1, backgroundColor: '#f4f6f9', padding: 15 },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#111417' },
+  loadingText: { color: '#fff', marginTop: 10, fontWeight: 'bold', fontSize: 13 },
+  topHeaderBar: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#111417', paddingVertical: 15, paddingHorizontal: 5, paddingTop: 40, gap: 14 },
+  backButton: { padding: 2 },
+  topHeaderTitle: { fontSize: 18, fontWeight: 'bold', color: '#fff' },
+  header: { backgroundColor: '#111417', padding: 16, borderRadius: 12, marginBottom: 15, borderBottomWidth: 4, borderBottomColor: '#f57c00' },
+  headerTitle: { color: '#fff', fontSize: 20, fontWeight: 'bold' },
+  headerSubtitle: { color: '#aaa', fontSize: 12, marginTop: 4 },
+  
+  financeBoxGreen: { flex: 1, backgroundColor: 'rgba(40, 167, 69, 0.15)', padding: 12, borderRadius: 8, borderLeftWidth: 4, borderLeftColor: '#28a745' },
+  financeBoxOrange: { flex: 1, backgroundColor: 'rgba(245, 124, 0, 0.15)', padding: 12, borderRadius: 8, borderLeftWidth: 4, borderLeftColor: '#f57c00' },
+  financeLabel: { fontSize: 10, color: '#aaa', fontWeight: 'bold' },
+  financeValue: { fontSize: 14, fontWeight: 'bold', color: '#fff', marginTop: 4 },
+
+  card: { backgroundColor: '#fff', borderRadius: 12, padding: 15, marginBottom: 15, borderLeftWidth: 5, borderLeftColor: '#1072ba', elevation: 1 },
+  cardVerified: { borderLeftColor: '#28a745' },
+  infoRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
+  roleBadge: { backgroundColor: '#e1f5fe', color: '#0288d1', paddingVertical: 2, paddingHorizontal: 8, borderRadius: 4, fontSize: 10, fontWeight: 'bold' },
+  statusBadge: { backgroundColor: '#ffe0b2', color: '#e65100', paddingVertical: 2, paddingHorizontal: 8, borderRadius: 4, fontSize: 10, fontWeight: 'bold' },
+  statusVerified: { backgroundColor: '#c8e6c9', color: '#257d32' },
+  partnerName: { fontSize: 16, fontWeight: 'bold', color: '#212529', marginBottom: 6 },
+  partnerDetails: { fontSize: 13, color: '#495057', marginVertical: 1.5 },
+  
+  gallery: { flexDirection: 'row', marginTop: 12, paddingVertical: 4 },
+  imgBox: { marginRight: 12, alignItems: 'center' },
+  imgLabel: { fontSize: 10, color: '#7f8c8d', fontWeight: 'bold', marginBottom: 4 },
+  docImage: { width: 90, height: 65, borderRadius: 6, backgroundColor: '#eee', resizeMode: 'cover' },
+  btnVerify: { backgroundColor: '#f57c00', padding: 12, borderRadius: 6, alignItems: 'center', marginTop: 14 },
+  btnText: { color: '#fff', fontWeight: 'bold', fontSize: 13 }
 });

@@ -8,8 +8,9 @@ export default function OrdersScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      {/* En-tête officiel Jula */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Feather name="arrow-left" size={24} color="#212529" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Mes Commandes</Text>
@@ -21,7 +22,7 @@ export default function OrdersScreen() {
         </View>
         <Text style={styles.title}>Vous n'avez pas de commande</Text>
         <Text style={styles.subtitle}>
-          Vos achats de smartphones, tablettes ou articles électroniques en direct des grossistes s'afficheront ici avec leur suivi de livraison !
+          Vos achats de smartphones, tablettes ou articles électroniques en direct des grossistes de la zone CFA s'afficheront ici !
         </Text>
         <TouchableOpacity style={styles.btnAction} onPress={() => router.replace('/(client)/(tabs)/home')}>
           <Text style={styles.btnText}>Commencer mes achats</Text>
@@ -34,6 +35,7 @@ export default function OrdersScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f8f9fa' },
   header: { flexDirection: 'row', alignItems: 'center', padding: 16, backgroundColor: '#fff', borderBottomWidth: 1, borderColor: '#dee2e6', paddingTop: 40, gap: 16 },
+  backButton: { padding: 2 },
   headerTitle: { fontSize: 18, fontWeight: 'bold', color: '#212529' },
   content: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 32 },
   iconCircle: { width: 90, height: 90, borderRadius: 45, backgroundColor: '#fff3e0', justifyContent: 'center', alignItems: 'center', marginBottom: 20 },

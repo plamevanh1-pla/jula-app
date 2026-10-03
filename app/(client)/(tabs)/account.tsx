@@ -24,14 +24,12 @@ export default function AccountScreen() {
   useEffect(() => {
     async function chargerDonneesProfil() {
       try {
-        // 📡 1. Détection du drapeau national choisi par l'utilisateur
         const pays = await AsyncStorage.getItem('jula_pays_choisi') || 'CI';
         if (pays === 'SN') setCurrentCountry('🇸🇳 Sénégal');
         if (pays === 'TG') setCurrentCountry('🇹🇬 Togo');
         if (pays === 'BJ') setCurrentCountry('🇧🇯 Bénin');
         if (pays === 'CI') setCurrentCountry('🇨🇮 Côte d\'Ivoire');
 
-        // 🔑 2. Détection automatique de la session cloud Supabase
         if (supabase && supabase.auth) {
           const { data: { user } } = await supabase.auth.getUser();
           if (user) {
@@ -132,12 +130,12 @@ export default function AccountScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* 🌟 MODULE DE SÉLECTION DE PAYS INTERNE */}
+        {/* 🌟 RECTIFIÉ : Route racine '/' pure pour forcer le retour sans freeze */}
         <Text style={styles.sectionTitle}>Région de livraison</Text>
         <View style={styles.menuGroup}>
           <TouchableOpacity style={styles.menuItem} onPress={async () => {
             await AsyncStorage.removeItem('jula_pays_choisi'); 
-            router.replace('/index'); 
+            router.replace('/'); 
           }}>
             <Feather name="globe" size={20} color="#f57c00" style={{ marginRight: 16 }} />
             <Text style={[styles.menuItemTxt, { color: '#f57c00', fontWeight: 'bold' }]}>Changer de pays actuel</Text>
@@ -147,8 +145,8 @@ export default function AccountScreen() {
 
         <Text style={styles.sectionTitle}>À propos de Jula</Text>
         <View style={styles.menuGroup}>
-          {renderItem("info", "Aide & Assistance", "/about")}
-          {renderItem("briefcase", "À propos de nos Services", "/services")}
+          {renderItem("info", "Aide & Assistance", "/(client)/help")}
+          {renderItem("briefcase", "À propos de nos Services", "/(client)/services")}
         </View>
 
         <Text style={styles.sectionTitle}>Mon compte Jula</Text>
@@ -162,8 +160,8 @@ export default function AccountScreen() {
           {renderItem("edit-3", "Notes et avis", "/(client)/reviews-history")}
           {renderItem("gift", "Bons d'achat", "/(client)/vouchers")}
           {renderItem("heart", "Favoris", "/favorites")}
-          {renderItem("shopping-bag", "Vendeurs suivis", "/vendeurs-suivis")}
-          {renderItem("clock", "Consultés récemment", "/consultes-recemment")}
+          {renderItem("shopping-bag", "Vendeurs suivis", "/(client)/vendeurs-suivis")}
+          {renderItem("clock", "Consultés récemment", "/(client)/consultes-recemment")}
         </View>
 
         <Text style={styles.sectionTitle}>Mes paramètres</Text>

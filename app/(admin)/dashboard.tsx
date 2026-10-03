@@ -1,3 +1,4 @@
+ import Feather from '@expo/vector-icons/Feather';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -12,8 +13,12 @@ export default function AdminDashboardScreen() {
     fetchGlobalStats();
   }, []);
 
+  const globalStatsRef = { current: fetchGlobalStats };
+
   const fetchGlobalStats = async () => {
     try {
+      if (!supabase) return;
+      
       // Nombre total d'utilisateurs inscrits sur Jula
       const { count: usersCount, error: usersError } = await supabase
         .from('profiles')
@@ -38,78 +43,106 @@ export default function AdminDashboardScreen() {
   };
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
+    if (supabase) await supabase.auth.signOut();
     router.replace('/(auth)/login');
   };
 
   if (loading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#343a40" />
+        <ActivityIndicator size="large" color="#f57c00" />
       </View>
     );
   }
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* En-tête Admin */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Panneau Administrateur</Text>
-        <TouchableOpacity onPress={handleLogout}>
-          <Text style={styles.logoutText}>Quitter</Text>
+      {/* Barre d'en-tête officielle du QG */}
+      <View style={styles.headerBar}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <Feather name="arrow-left" size={24} color="#fff" />
+        </TouchableOpacity>
+        <View style={{ flex: 1, marginLeft: 12 }}>
+          <Text style={styles.headerBarTitle}>DASHBOARD GÉNÉRAL</Text>
+          <Text style={styles.headerBarSubtitle}>Vue d'ensemble de l'écosystème</Text>
+        </View>
+        <TouchableOpacity onPress={handleLogout} style={styles.logoutBtn}>
+          <Feather name="power" size={20} color="#d9534f" />
         </TouchableOpacity>
       </View>
 
-      <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.welcomeText}>Vue globale de l'écosystème Jula :</Text>
+      <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false}>
+        <Text style={styles.welcomeText}>Indicateurs globaux d'activité Jula Network :</Text>
 
         {/* Statistiques Plateforme */}
         <View style={styles.statsGrid}>
           <View style={styles.statsCard}>
+            <Feather name="users" size={22} color="#f57c00" />
             <Text style={styles.statsNumber}>{globalStats.totalUsers}</Text>
             <Text style={styles.statsLabel}>Membres inscrits</Text>
           </View>
 
-          <View style={styles.statsCard}>
-            <Text style={styles.statsNumber}>{globalStats.totalOrders}</Text>
+          <View style={[styles.statsCard, { borderBottomColor: '#1072ba' }]}>
+            <Feather name="package" size={22} color="#1072ba" />
+            <Text style={[styles.statsNumber, { color: '#1072ba' }]}>{globalStats.totalOrders}</Text>
             <Text style={styles.statsLabel}>Commandes totales</Text>
           </View>
         </View>
 
         {/* Menus de modération */}
-        <Text style={styles.sectionTitle}>Gestion du système</Text>
+        <Text style={styles.sectionTitle}>Gestion du système Jula</Text>
         <View style={styles.actionsContainer}>
           <TouchableOpacity style={styles.actionButton} onPress={() => router.push('/(admin)/users')}>
-            <Text style={styles.actionText}>👥 Modérer les utilisateurs & vendeurs</Text>
+            <Feather name="user-check" size={18} color="#2e7d32" />
+            <Text style={styles.actionText}>Modérer les utilisateurs & vendeurs</Text>
+            <Feather name="chevron-right" size={16} color="#7f8c8d" style={styles.arrowRight} />
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.actionButton} onPress={() => router.push('/(admin)/products')}>
-            <Text style={styles.actionText}>📦 Inspecter le catalogue de produits</Text>
+            <Feather name="box" size={18} color="#f57c00" />
+            <Text style={styles.actionText}>Inspecter le catalogue de produits</Text>
+            <Feather name="chevron-right" size={16} color="#7f8c8d" style={styles.arrowRight} />
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.actionButton} onPress={() => router.push('/(admin)/orders')}>
-            <Text style={styles.actionText}>📊 Historique global des transactions</Text>
+            <Feather name="activity" size={18} color="#1072ba" />
+            <Text style={styles.actionText}>Historique global des transactions</Text>
+            <Feather name="chevron-right" size={16} color="#7f8c8d" style={styles.arrowRight} />
           </TouchableOpacity>
         </View>
+
+        {/* Bouton fermeture sécurisée */}
+        <TouchableOpacity style={styles.buttonClose} onPress={() => router.back()}>
+          <Text style={styles.buttonText}>🔒 Quitter le Dashboard</Text>
+        </TouchableOpacity>
+        <View style={{ height: 40 }} />
       </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f8f9fa' },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, backgroundColor: '#212529', borderBottomWidth: 1, borderColor: '#343a40' },
-  headerTitle: { fontSize: 18, fontWeight: 'bold', color: '#fff' },
-  logoutText: { color: '#ffc107', fontWeight: '600', fontSize: 14 },
-  content: { padding: 24 },
-  welcomeText: { fontSize: 15, color: '#495057', marginBottom: 20, fontWeight: '500' },
-  statsGrid: { flexDirection: 'row', gap: 16, marginBottom: 32 },
-  statsCard: { flex: 1, backgroundColor: '#fff', padding: 20, borderRadius: 12, alignItems: 'center', borderWidth: 1, borderColor: '#dee2e6' },
-  statsNumber: { fontSize: 24, fontWeight: 'bold', color: '#212529' },
-  statsLabel: { fontSize: 12, color: '#6c757d', marginTop: 4, textAlign: 'center' },
-  sectionTitle: { fontSize: 16, fontWeight: 'bold', color: '#212529', marginBottom: 16 },
-  actionsContainer: { gap: 12 },
-  actionButton: { backgroundColor: '#fff', padding: 16, borderRadius: 8, borderWidth: 1, borderColor: '#ced4da' },
-  actionText: { color: '#212529', fontSize: 15, fontWeight: '600' }
+  container: { flex: 1, backgroundColor: '#111417' },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#111417' },
+  headerBar: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#1a1d21', paddingVertical: 15, paddingHorizontal: 15, borderBottomWidth: 1, borderBottomColor: '#2d3139', paddingTop: 40 },
+  backButton: { padding: 2 },
+  headerBarTitle: { fontSize: 16, fontWeight: 'bold', color: '#fff', letterSpacing: 0.5 },
+  headerBarSubtitle: { fontSize: 11, color: '#f57c00', fontWeight: '600', marginTop: 2 },
+  logoutBtn: { padding: 4 },
+  
+  scrollContainer: { padding: 15 },
+  welcomeText: { fontSize: 13, color: '#ecf0f1', marginBottom: 20, fontWeight: '500' },
+  statsGrid: { flexDirection: 'row', gap: 12, marginBottom: 25 },
+  statsCard: { flex: 1, backgroundColor: '#1a1d21', padding: 16, borderRadius: 8, alignItems: 'center', borderBottomWidth: 4, borderBottomColor: '#f57c00', borderWidth: 1, borderColor: '#2d3139' },
+  statsNumber: { fontSize: 22, fontWeight: 'bold', color: '#f57c00', marginTop: 8 },
+  statsLabel: { fontSize: 11, color: '#95a5a6', marginTop: 4, textAlign: 'center', fontWeight: '500' },
+  
+  sectionTitle: { fontSize: 12, color: '#7f8c8d', fontWeight: 'bold', marginBottom: 15, textTransform: 'uppercase', letterSpacing: 0.8 },
+  actionsContainer: { gap: 10 },
+  actionButton: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#1a1d21', padding: 16, borderRadius: 4, borderWidth: 1, borderColor: '#2d3139' },
+  actionText: { color: '#ecf0f1', fontSize: 13, fontWeight: '500', marginLeft: 14 },
+  arrowRight: { marginLeft: 'auto' },
+  
+  buttonClose: { backgroundColor: '#f57c00', padding: 14, borderRadius: 6, alignItems: 'center', marginTop: 30 },
+  buttonText: { color: '#fff', fontWeight: 'bold', fontSize: 14 }
 });
