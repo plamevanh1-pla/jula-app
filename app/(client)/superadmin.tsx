@@ -1,4 +1,4 @@
- import Feather from '@expo/vector-icons/Feather';
+  import Feather from '@expo/vector-icons/Feather';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -6,7 +6,7 @@ import { SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } fr
 export default function SuperAdminScreen() {
   const router = useRouter();
 
-  // 📈 STATISTIQUES REGIONALES JULA DE PRODUCTION (ZONE CFA)
+  // 📈 STATISTIQUES RÉGIONALES JULA DE PRODUCTION (ZONE CFA)
   const [stats] = useState({
     totalGrossistes: 14,
     totalCommandes: 142,
@@ -32,27 +32,29 @@ export default function SuperAdminScreen() {
         <Text style={styles.sectionLabel}>📈 Tableau de Bord Zone CFA (XOF)</Text>
         
         <View style={styles.statsGrid}>
-          <TouchableOpacity style={styles.statsCard} onPress={() => router.push('/(admin)/users')}>
+          <TouchableOpacity style={styles.statsCard} onPress={() => router.push('/(client)/users')}>
             <Feather name="users" size={20} color="#f57c00" />
             <Text style={styles.statsNumber}>{stats.totalGrossistes}</Text>
             <Text style={styles.statsTitle}>Grossistes Certifiés</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={[styles.statsCard, { borderBottomColor: '#1072ba' }]} onPress={() => router.push('/(admin)/orders')}>
+          {/* 🟢 REDIRECTION SÉCURISÉE VERS ADMIN-ORDERS POUR ÉVITER LES ÉCRANS NOIRS */}
+          <TouchableOpacity style={[styles.statsCard, { borderBottomColor: '#1072ba' }]} onPress={() => router.push('/(client)/admin-orders')}>
             <Feather name="package" size={20} color="#1072ba" />
             <Text style={[styles.statsNumber, { color: '#1072ba' }]}>{stats.totalCommandes}</Text>
             <Text style={styles.statsTitle}>Flux de Commandes</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={[styles.statsCard, { borderBottomColor: '#2e7d32', width: '100%' }]} onPress={() => router.push('/(admin)/analytics')}>
+          <TouchableOpacity style={[styles.statsCard, { borderBottomColor: '#2e7d32', width: '100%' }]} onPress={() => router.push('/(client)/analytics')}>
             <Feather name="trending-up" size={20} color="#2e7d32" />
             <Text style={[styles.statsNumber, { color: '#2e7d32' }]}>{stats.chiffreAffaires.toLocaleString('fr-FR')} F</Text>
             <Text style={styles.statsTitle}>Volume d'Affaires Global (UEMOA)</Text>
           </TouchableOpacity>
         </View>
+
         <Text style={styles.sectionLabel}>⚙️ Pilotage Stratégique du Réseau</Text>
 
-        <TouchableOpacity style={styles.adminActionRow} onPress={() => router.push('/(admin)/dashboard')}>
+        <TouchableOpacity style={styles.adminActionRow} onPress={() => router.push('/(client)/dashboard')}>
           <View style={styles.actionLeft}>
             <Feather name="grid" size={18} color="#fff" />
             <Text style={styles.actionText}>Ouvrir le Dashboard Général</Text>
@@ -60,7 +62,7 @@ export default function SuperAdminScreen() {
           <Feather name="chevron-right" size={16} color="#7f8c8d" />
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.adminActionRow} onPress={() => router.push('/(admin)/products')}>
+        <TouchableOpacity style={styles.adminActionRow} onPress={() => router.push('/(client)/products')}>
           <View style={styles.actionLeft}>
             <Feather name="box" size={18} color="#f57c00" />
             <Text style={styles.actionText}>Gestion du Catalogue Produits</Text>
@@ -68,7 +70,7 @@ export default function SuperAdminScreen() {
           <Feather name="chevron-right" size={16} color="#7f8c8d" />
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.adminActionRow} onPress={() => router.push('/(admin)/users')}>
+        <TouchableOpacity style={styles.adminActionRow} onPress={() => router.push('/(client)/users')}>
           <View style={styles.actionLeft}>
             <Feather name="user-check" size={18} color="#2e7d32" />
             <Text style={styles.actionText}>Utilisateurs & Boutiques</Text>
@@ -76,7 +78,8 @@ export default function SuperAdminScreen() {
           <Feather name="chevron-right" size={16} color="#7f8c8d" />
         </TouchableOpacity>
 
-        <TouchableOpacity style={[styles.adminActionRow, { borderBottomWidth: 0 }]} onPress={() => router.push('/(admin)/orders')}>
+        {/* 🟢 SECURISE ÉGALEMENT ICI VERS ADMIN-ORDERS */}
+        <TouchableOpacity style={[styles.adminActionRow, { borderBottomWidth: 0 }]} onPress={() => router.push('/(client)/admin-orders')}>
           <View style={styles.actionLeft}>
             <Feather name="alert-triangle" size={18} color="#d9534f" />
             <Text style={styles.actionText}>Litiges & Alertes Logistiques</Text>

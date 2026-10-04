@@ -1,4 +1,4 @@
-import Feather from '@expo/vector-icons/Feather';
+ import Feather from '@expo/vector-icons/Feather';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -30,20 +30,20 @@ export default function AdminOrdersScreen() {
     }
   };
 
-  const handleEditOrderStatus = (orderId: number, currentStatus: string) => {
+  const handleEditOrderStatus = (orderId: string, currentStatus: string) => {
     Alert.alert(
       "Modifier la commande",
       `Statut actuel : ${currentStatus || 'En attente'}`,
       [
         { text: "Annuler", style: "cancel" },
-        { text: "Mettre En Attente", onPress: () => updateStatus(orderId, 'en_attente') },
-        { text: "Mettre En Cours", onPress: () => updateStatus(orderId, 'en_cours') },
-        { text: "Marquer comme Livré", onPress: () => updateStatus(orderId, 'livré') }
+        { text: "Mettre En Attente", onPress: () => updateStatus(orderId, 'en attente') },
+        { text: "Mettre En Cours", onPress: () => updateStatus(orderId, 'en cours') },
+        { text: "Marquer comme Livré", onPress: () => updateStatus(orderId, 'Livré') }
       ]
     );
   };
 
-  const updateStatus = async (orderId: number, newStatus: string) => {
+  const updateStatus = async (orderId: string, newStatus: string) => {
     try {
       const { error } = await supabase
         .from('orders')
@@ -59,14 +59,14 @@ export default function AdminOrdersScreen() {
   };
 
   const getStatusColor = (status: string) => {
-    const check = status?.toLowerCase();
+    const check = status ? status.toLowerCase() : 'en attente';
     switch (check) {
       case 'livré':
       case 'livre': 
         return { label: 'Livré', color: '#2e7d32', bg: 'rgba(46, 125, 50, 0.15)' };
-      case 'en_cours': 
+      case 'en cours': 
         return { label: 'En cours', color: '#f57c00', bg: 'rgba(245, 124, 0, 0.15)' };
-      case 'en_attente':
+      case 'en attente':
       default:
         return { label: 'En attente', color: '#d9534f', bg: 'rgba(217, 83, 79, 0.15)' };
     }
@@ -74,7 +74,6 @@ export default function AdminOrdersScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Barre d'en-tête officielle du QG */}
       <View style={styles.headerBar}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Feather name="arrow-left" size={24} color="#fff" />
@@ -93,11 +92,11 @@ export default function AdminOrdersScreen() {
       ) : (
         <FlatList
           data={orders}
-          keyExtractor={(item) => item.id?.toString()}
+          keyExtractor={(item) => item.id ? item.id.toString() : Math.random().toString()}
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={
-            <Text style={styles.emptyText}>Aucune commande enregistrée sur Jula pour l'instant.</Text>
+            <Text style={styles.emptyText}>Aucune commande enregistrée sur Jula.</Text>
           }
           renderItem={({ item }) => {
             const statusInfo = getStatusColor(item.status);
@@ -105,18 +104,19 @@ export default function AdminOrdersScreen() {
             return (
               <View style={styles.orderCard}>
                 <View style={styles.cardHeader}>
-                  <Text style={styles.orderId}>Commande #{item.id?.toString().substring(0, 8).toUpperCase() || 'ID'}</Text>
+                  <Text style={styles.orderId}>Commande #{item.id ? item.id.toString().substring(0, 8).toUpperCase() : 'ID'}</Text>
                   <Text style={styles.orderDate}>{date}</Text>
                 </View>
 
                 <View style={styles.divider} />
 
-                {/* Coordonnées logistiques stockées sur Supabase */}
+                {/* 📡 CORRIGÉ SUR TES VRAIES COLONNES SUPABASE */}
                 <View style={styles.detailsBox}>
-                  <Text style={styles.detailsText}>👤 Destinataire : {item.delivery_name || 'Non spécifié'}</Text>
-                  <Text style={styles.detailsText}>📞 Client : {item.delivery_phone || 'Pas de numéro'}</Text>
-                  <Text style={styles.detailsText}>📍 Destination : {item.delivery_city || 'Pays'}, {item.delivery_neighborhood || 'Quartier'}</Text>
-                  <Text style={styles.detailsText}>💳 Mode de Paiement : {item.payment_method || 'Mobile Money'}</Text>
+                  <Text style={styles.detailsText}>📦 Article : {item.product_title || item.product_name || 'Produit Jula'}</Text>
+                  <Text style={styles.detailsText}>👤 Client : {item.buyer_email || item.customer_email || 'Anonyme'}</Text>
+                  <Text style={styles.detailsText}>📞 Tel : {item.buyer_phone || 'Non renseigné'}</Text>
+                  <Text style={styles.detailsText}>📍 Adresse : {item.buyer_address || item.delivery_address || 'Zone CFA'}</Text>
+                  <Text style={styles.detailsText}>🚚 Transport : {item.selected_delivery_mode || 'Standard'}</Text>
                 </View>
 
                 <View style={styles.divider} />
@@ -125,7 +125,8 @@ export default function AdminOrdersScreen() {
                   <View style={[styles.statusBadge, { backgroundColor: statusInfo.bg }]}>
                     <Text style={[styles.statusText, { color: statusInfo.color }]}>{statusInfo.label}</Text>
                   </View>
-                  <Text style={styles.orderPrice}>{Number(item.total_amount || 0).toLocaleString('fr-FR')} FCFA</Text>
+                  {/* 🟢 CORRIGÉ : Utilise total_price comme écrit dans ton Supabase */}
+                  <Text style={styles.orderPrice}>{Number(item.total_price || 0).toLocaleString('fr-FR')} FCFA</Text>
                 </View>
 
                 <TouchableOpacity 
@@ -150,7 +151,6 @@ const styles = StyleSheet.create({
   backButton: { padding: 2 },
   headerBarTitle: { fontSize: 16, fontWeight: 'bold', color: '#fff', letterSpacing: 0.5 },
   headerBarSubtitle: { fontSize: 11, color: '#f57c00', fontWeight: '600', marginTop: 2 },
-  
   list: { padding: 15 },
   emptyText: { textAlign: 'center', color: '#7f8c8d', marginTop: 40, fontSize: 13, fontWeight: '500' },
   orderCard: { backgroundColor: '#1a1d21', borderRadius: 8, padding: 16, marginBottom: 15, borderWidth: 1, borderColor: '#2d3139' },

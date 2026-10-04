@@ -1,4 +1,4 @@
-import Feather from '@expo/vector-icons/Feather';
+ import Feather from '@expo/vector-icons/Feather';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Linking from 'expo-linking';
 import { useRouter } from 'expo-router';
@@ -9,6 +9,7 @@ import { supabase } from '../../../src/config/supabaseClient';
 export default function AccountScreen() {
   const router = useRouter();
   const [userEmail, setUserEmail] = useState('');
+  const [userRole, setUserRole] = useState('client'); // 🔒 État de sécurité pour stocker le rôle cloud
   const [walletBalance, setWalletBalance] = useState(0);
   const [currentCountry, setCurrentCountry] = useState('🇨🇮 Côte d\'Ivoire');
   const [search, setSearch] = useState('');
@@ -24,18 +25,29 @@ export default function AccountScreen() {
   useEffect(() => {
     async function chargerDonneesProfil() {
       try {
+        // 📡 1. Détection du drapeau national choisi par l'utilisateur
         const pays = await AsyncStorage.getItem('jula_pays_choisi') || 'CI';
         if (pays === 'SN') setCurrentCountry('🇸🇳 Sénégal');
         if (pays === 'TG') setCurrentCountry('🇹🇬 Togo');
         if (pays === 'BJ') setCurrentCountry('🇧🇯 Bénin');
         if (pays === 'CI') setCurrentCountry('🇨🇮 Côte d\'Ivoire');
 
+        // 🔑 2. Détection automatique de la session cloud Supabase et du rôle
         if (supabase && supabase.auth) {
           const { data: { user } } = await supabase.auth.getUser();
           if (user) {
             setUserEmail(user.email || '');
+            
+            // On récupère le rôle de sécurité en direct de Supabase profiles
+            const { data: profil } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle();
+            if (profil) setUserRole(profil.role || 'client');
+
+            // Solde du portefeuille
             const { data: wallet } = await supabase.from('wallets').select('balance_fcfa').eq('user_id', user.id).maybeSingle();
             if (wallet) setWalletBalance(wallet.balance_fcfa);
+          } else {
+            setUserEmail('');
+            setUserRole('client');
           }
         }
       } catch (err) {
@@ -47,12 +59,24 @@ export default function AccountScreen() {
     chargerDonneesProfil();
   }, []);
 
+  // 🔎 RECHERCHE PROPULSÉE VERS L'ACCUEIL LOGIQUE JULA
+  const declencherRechercheGlobale = async () => {
+    if (search.trim() === '') return;
+    try {
+      await AsyncStorage.setItem('jula_mot_recherche_temporaire', search.trim());
+      router.push('/(client)/(tabs)/home');
+    } catch (e) {
+      console.log("Erreur transmission recherche", e);
+    }
+  };
+
   const handleLogout = () => {
     Alert.alert("Déconnexion", "Voulez-vous vous déconnecter de Jula ?", [
       { text: "Annuler", style: "cancel" },
       { text: "Oui", onPress: async () => { 
-          await supabase.auth.signOut(); 
+          if (supabase) await supabase.auth.signOut(); 
           setUserEmail(''); 
+          setUserRole('client');
           setWalletBalance(0);
           router.replace('/(auth)/login'); 
         } 
@@ -78,10 +102,21 @@ export default function AccountScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      {/* 🔍 BARRE DE RECHERCHE CORRIGÉE AVEC LOUPE CLICQUABLE ET ACTION CLAVIER */}
       <View style={styles.searchBarContainer}>
         <View style={styles.searchField}>
-          <Feather name="search" size={20} color="#212529" />
-          <TextInput style={styles.searchInput} placeholder="Recherche sur Jula" placeholderTextColor="#7f8c8d" value={search} onChangeText={setSearch} />
+          <TouchableOpacity onPress={declencherRechercheGlobale}>
+            <Feather name="search" size={20} color="#f57c00" style={{ padding: 2 }} />
+          </TouchableOpacity>
+          <TextInput 
+            style={styles.searchInput} 
+            placeholder="Recherche sur Jula..." 
+            placeholderTextColor="#7f8c8d" 
+            value={search} 
+            onChangeText={setSearch}
+            onSubmitEditing={declencherRechercheGlobale}
+            returnKeyType="search"
+          />
         </View>
       </View>
 
@@ -104,7 +139,7 @@ export default function AccountScreen() {
 
         <View style={styles.soldeLine}>
           <Feather name="credit-card" size={20} color="#1072ba" />
-          <Text style={styles.soldeTxt}>{userEmail ? `Votre solde disponible : ${walletBalance} FCFA` : "Connectez-vous pour voir votre solde disponible"}</Text>
+          <Text style={styles.soldeTxt}>{userEmail ? `Votre solde disponible : ${walletBalance.toLocaleString('fr-FR')} FCFA` : "Connectez-vous pour voir votre solde disponible"}</Text>
         </View>
         <View style={styles.actionRow}>
           <TouchableOpacity style={styles.chatBtn} onPress={() => router.push('/chat')}>
@@ -130,7 +165,6 @@ export default function AccountScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* 🌟 RECTIFIÉ : Route racine '/' pure pour forcer le retour sans freeze */}
         <Text style={styles.sectionTitle}>Région de livraison</Text>
         <View style={styles.menuGroup}>
           <TouchableOpacity style={styles.menuItem} onPress={async () => {
@@ -172,12 +206,17 @@ export default function AccountScreen() {
           {renderItem("shield", "Politique de Confidentialité", "/(client)/about")}
         </View>
 
-        <Text style={styles.sectionTitle}>Administration Privée</Text>
-        <View style={{ paddingHorizontal: 16, paddingVertical: 10, backgroundColor: '#fff' }}>
-          <TouchableOpacity style={styles.btnSecretAdmin} onPress={() => router.push('/(admin)/superadmin')} activeOpacity={0.8}>
-            <Text style={styles.btnSecretText}>⚙️ Ouvrir le QG Mobile Jacky</Text>
-          </TouchableOpacity>
-        </View>
+        {/* 🔒 MODULE DE SÉCURITÉ ADMINISTRATEUR TOTALEMENT PRIVÉ */}
+        {userRole === 'admin' && (
+          <View style={{ backgroundColor: '#f2f2f2' }}>
+            <Text style={styles.sectionTitle}>Administration Privée</Text>
+            <View style={{ paddingHorizontal: 16, paddingVertical: 10, backgroundColor: '#fff' }}>
+              <TouchableOpacity style={styles.btnSecretAdmin} onPress={() => router.push('/(client)/superadmin')} activeOpacity={0.8}>
+                <Text style={styles.btnSecretText}>⚙️ Ouvrir le QG Mobile Jacky</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
 
         {!userEmail && (
           <View style={styles.footerInviteBlock}>
