@@ -3,8 +3,8 @@ import React, { useEffect } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 import { AuthProvider, useAuth } from '../src/context/AuthContext';
 import { CartProvider } from '../src/context/CartContext';
+import { ThemeProvider } from '../src/context/ThemeContext'; // 🟢 INJECTION DU MOTEUR LUMIÈRE JULA
 
-// Interface optionnelle pour l'historique des segments de navigation
 type RouteSegment = string;
 
 function NavigationGuard() {
@@ -52,7 +52,6 @@ function NavigationGuard() {
       </View>
     );
   }
-
   return (
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="index" />
@@ -67,10 +66,13 @@ function NavigationGuard() {
 
 export default function RootLayout() {
   return (
-    <AuthProvider>
-      <CartProvider>
-        <NavigationGuard />
-      </CartProvider>
-    </AuthProvider>
+    // 🌓 LE THÈME PROVIDER COUVRE TOUTE L'APPLICATION DU COMPTE CLIENT AUX ESPACES PROS
+    <ThemeProvider>
+      <AuthProvider>
+        <CartProvider>
+          <NavigationGuard />
+        </CartProvider>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }

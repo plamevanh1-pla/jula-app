@@ -3,8 +3,10 @@ import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { supabase } from '../../src/config/supabaseClient';
+import { useTheme } from '../../src/context/ThemeContext'; // 🟢 INJECTION DE LA LUMIÈRE JULA
 
 export default function AdminOrdersScreen() {
+  const { isDarkMode } = useTheme(); // 🌓 DÉTECTION DU MODE VISUEL CHOISI
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
@@ -74,22 +76,27 @@ export default function AdminOrdersScreen() {
         return { label: 'En attente', color: '#d9534f', bg: 'rgba(217, 83, 79, 0.15)' };
     }
   };
-
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.headerBar}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Feather name="arrow-left" size={24} color="#fff" />
+    <SafeAreaView style={[styles.container, { backgroundColor: isDarkMode ? '#111417' : '#f4f6f9' }]}>
+      
+      {/* 🪐 BARRE EN-TÊTE SUPÉRIEURE - FLÈCHE DE RETOUR FORCÉE AU COMPTE ACCESSIBLE */}
+      <View style={[styles.headerBar, { backgroundColor: isDarkMode ? '#1a1d21' : '#fff', borderBottomColor: isDarkMode ? '#2d3139' : '#e9ecef' }]}>
+        <TouchableOpacity 
+          onPress={() => router.replace('/(client)/(tabs)/account')} 
+          style={styles.backButton}
+        >
+          <Feather name="arrow-left" size={24} color={isDarkMode ? '#fff' : '#212529'} />
         </TouchableOpacity>
+        
         <View style={{ flex: 1, marginLeft: 12 }}>
-          <Text style={styles.headerBarTitle}>SUIVI DES VENTES</Text>
+          <Text style={[styles.headerBarTitle, { color: isDarkMode ? '#fff' : '#212529' }]}>SUIVI DES VENTES</Text>
           <Text style={styles.headerBarSubtitle}>Flux de commandes zone CFA</Text>
         </View>
         <Feather name="activity" size={20} color="#1072ba" />
       </View>
 
       {loading ? (
-        <View style={styles.center}>
+        <View style={[styles.center, { backgroundColor: isDarkMode ? '#111417' : '#f4f6f9' }]}>
           <ActivityIndicator size="large" color="#f57c00" />
         </View>
       ) : (
@@ -113,22 +120,22 @@ export default function AdminOrdersScreen() {
             const cleanId = item.id ? item.id.toString().substring(0, 8).toUpperCase() : 'SANS-ID';
             const cleanPrice = item.total_amount ? Number(item.total_amount).toLocaleString('fr-FR') : '0';
             return (
-              <View style={styles.orderCard}>
+              <View style={[styles.orderCard, { backgroundColor: isDarkMode ? '#1a1d21' : '#fff', borderColor: isDarkMode ? '#2d3139' : '#e9ecef' }]}>
                 <View style={styles.cardHeader}>
-                  <Text style={styles.orderId}>Commande #{cleanId}</Text>
+                  <Text style={[styles.orderId, { color: isDarkMode ? '#fff' : '#212529' }]}>Commande #{cleanId}</Text>
                   <Text style={styles.orderDate}>{date}</Text>
                 </View>
 
-                <View style={styles.divider} />
+                <View style={[styles.divider, { backgroundColor: isDarkMode ? '#2d3139' : '#e9ecef' }]} />
 
                 <View style={styles.detailsBox}>
-                  <Text style={styles.detailsText}>👤 Destinataire : {item.delivery_name || 'Non spécifié'}</Text>
-                  <Text style={styles.detailsText}>📞 Client : {item.delivery_phone || 'Pas de numéro'}</Text>
-                  <Text style={styles.detailsText}>📍 Destination : {item.delivery_city || 'Ville'}, {item.delivery_neighborhood || 'Quartier'}</Text>
-                  <Text style={styles.detailsText}>💳 Mode de Paiement : {item.payment_method || 'Mobile Money'}</Text>
+                  <Text style={[styles.detailsText, { color: isDarkMode ? '#ecf0f1' : '#495057' }]}>👤 Destinataire : {item.delivery_name || 'Non spécifié'}</Text>
+                  <Text style={[styles.detailsText, { color: isDarkMode ? '#ecf0f1' : '#495057' }]}>📞 Client : {item.delivery_phone || 'Pas de numéro'}</Text>
+                  <Text style={[styles.detailsText, { color: isDarkMode ? '#ecf0f1' : '#495057' }]}>📍 Destination : {item.delivery_city || 'Ville'}, {item.delivery_neighborhood || 'Quartier'}</Text>
+                  <Text style={[styles.detailsText, { color: isDarkMode ? '#ecf0f1' : '#495057' }]}>💳 Mode de Paiement : {item.payment_method || 'Mobile Money'}</Text>
                 </View>
 
-                <View style={styles.divider} />
+                <View style={[styles.divider, { backgroundColor: isDarkMode ? '#2d3139' : '#e9ecef' }]} />
 
                 <View style={styles.cardFooter}>
                   <View style={[styles.statusBadge, { backgroundColor: statusInfo.bg }]}>
@@ -138,10 +145,10 @@ export default function AdminOrdersScreen() {
                 </View>
 
                 <TouchableOpacity 
-                  style={styles.actionButton}
+                  style={[styles.actionButton, { backgroundColor: isDarkMode ? '#111417' : '#f8f9fa', borderColor: isDarkMode ? '#2d3139' : '#e9ecef' }]}
                   onPress={() => handleEditOrderStatus(item.id, item.status)}
                 >
-                  <Text style={styles.actionButtonText}>⚙️ Forcer le statut de livraison</Text>
+                  <Text style={[styles.actionButtonText, { color: isDarkMode ? '#ecf0f1' : '#212529' }]}>⚙️ Forcer le statut de livraison</Text>
                 </TouchableOpacity>
               </View>
             );
@@ -153,25 +160,25 @@ export default function AdminOrdersScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#111417' },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#111417' },
-  headerBar: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#1a1d21', paddingVertical: 15, paddingHorizontal: 15, borderBottomWidth: 1, borderBottomColor: '#2d3139', paddingTop: 40 },
+  container: { flex: 1 },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  headerBar: { flexDirection: 'row', alignItems: 'center', paddingVertical: 15, paddingHorizontal: 15, borderBottomWidth: 1, paddingTop: 40 },
   backButton: { padding: 2 },
-  headerBarTitle: { fontSize: 16, fontWeight: 'bold', color: '#fff', letterSpacing: 0.5 },
+  headerBarTitle: { fontSize: 16, fontWeight: 'bold', letterSpacing: 0.5 },
   headerBarSubtitle: { fontSize: 11, color: '#f57c00', fontWeight: '600', marginTop: 2 },
   list: { padding: 15 },
   emptyText: { textAlign: 'center', color: '#7f8c8d', marginTop: 40, fontSize: 13, fontWeight: '500' },
-  orderCard: { backgroundColor: '#1a1d21', borderRadius: 8, padding: 16, marginBottom: 15, borderWidth: 1, borderColor: '#2d3139' },
+  orderCard: { borderRadius: 8, padding: 16, marginBottom: 15, borderWidth: 1 },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  orderId: { fontSize: 14, fontWeight: 'bold', color: '#fff' },
+  orderId: { fontSize: 14, fontWeight: 'bold' },
   orderDate: { fontSize: 11, color: '#7f8c8d' },
-  divider: { height: 1, backgroundColor: '#2d3139', marginVertical: 12 },
+  divider: { height: 1, marginVertical: 12 },
   detailsBox: { gap: 6 },
-  detailsText: { fontSize: 13, color: '#ecf0f1' },
+  detailsText: { fontSize: 13 },
   cardFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 4 },
   statusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 4 },
   statusText: { fontSize: 11, fontWeight: 'bold' },
   orderPrice: { fontSize: 15, fontWeight: 'bold', color: '#f57c00' },
-  actionButton: { padding: 12, borderRadius: 4, borderWidth: 1, borderColor: '#2d3139', alignItems: 'center', marginTop: 14, backgroundColor: '#111417' },
-  actionButtonText: { color: '#ecf0f1', fontSize: 12, fontWeight: '600' }
+  actionButton: { padding: 12, borderRadius: 4, borderWidth: 1, alignItems: 'center', marginTop: 14 },
+  actionButtonText: { fontSize: 12, fontWeight: '600' }
 });
