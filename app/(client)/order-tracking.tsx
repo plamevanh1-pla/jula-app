@@ -1,7 +1,7 @@
-  import React, { useEffect, useState } from 'react';
-import { StyleSheet, Text, View, ActivityIndicator, SafeAreaView, ScrollView, TouchableOpacity } from 'react-native';
+  import Feather from '@expo/vector-icons/Feather';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import Feather from '@expo/vector-icons/Feather';
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { supabase } from '../../src/config/supabaseClient';
 import { useTheme } from '../../src/context/ThemeContext'; // 🌓 S'adapte au mode sombre Jacky
 
@@ -153,7 +153,8 @@ export default function OrderTrackingScreen() {
         {/* Fiche d'assistance logistique client */}
         <View style={[styles.card, { backgroundColor: isDarkMode ? '#1a1d21' : '#fff', borderColor: isDarkMode ? '#2d3139' : '#eee' }]}>
           <Text style={[styles.assistantTitle, { color: isDarkMode ? '#fff' : '#212529' }]}><Feather name="phone-call" size={16} /> Besoin d'assistance ?</Text>
-          <Text style={styles.assistantSub}>Notre équipe de régulation logistique UEMOA suit l'avancement de cette moto en temps réel.</p>
+          <Text style={styles.assistantSub}>Notre équipe de régulation logistique UEMOA suit l'avancement de cette moto en temps réel.</Text>
+
           <Text style={styles.assistantContact}>Téléphone acheteur : {order.buyer_phone || 'Non renseigné'}</Text>
           <Text style={styles.assistantContact}>Adresse choisie : {order.buyer_address || 'Adjamé, Abidjan'}</Text>
         </View>

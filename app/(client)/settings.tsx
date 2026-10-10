@@ -1,6 +1,6 @@
-import { useRouter } from 'expo-router';
-import { default as React, default as React } from 'react';
-import { Alert, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+  import { useRouter } from 'expo-router';
+import React from 'react';
+import { SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import AppearanceSelector from '../../src/components/AppearanceSelector'; // 🟢 IMPORT DU SÉLECTEUR JULA
 
 export default function SettingsScreen() {
@@ -8,60 +8,39 @@ export default function SettingsScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      {/* Barre d'en-tête supérieure */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Paramètres Jula</Text>
-      </View>
-      <View style={styles.content}>
-        <TouchableOpacity 
-          style={styles.row} 
-          onPress={() => Alert.alert("Sécurité", "Option de changement de mot de passe à venir.")}
-        >
-          <Text style={styles.rowText}>Changer le mot de passe</Text>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+          <Text style={styles.backText}>←</Text>
         </TouchableOpacity>
-      </View>
-    </SafeAreaView>
-  );
-}
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f4f4f6' },
-  header: { padding: 16, backgroundColor: '#fff', borderBottomWidth: 1, borderColor: '#e9ecef', paddingTop: 40 },
-  headerTitle: { fontSize: 18, fontWeight: 'bold', color: '#212529' },
-  content: { padding: 16 },
-  row: { backgroundColor: '#fff', padding: 16, borderRadius: 8, marginBottom: 12, borderWidth: 1, borderColor: '#e9ecef' },
-  rowText: { fontSize: 14, color: '#212529', fontWeight: '500' }
-});
-
-export default function SettingsScreen() {
-  const router = useRouter();
-
-  return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
         <Text style={styles.headerTitle}>Paramètres Jula</Text>
+        <View style={{ width: 40 }} />
       </View>
-      
+
+      {/* Contenu principal de la page */}
       <View style={styles.content}>
-        {/* 🌓 INJECTION DE TON BOUTON DE CHANGEMENT DE THÈME INTERACTIF */}
+        <Text style={styles.sectionTitle}>Affichage & Thème</Text>
+        {/* Sélecteur de mode Clair / Sombre de Jacky */}
         <AppearanceSelector />
-
-        {/* Option Sécurité existante */}
-        <TouchableOpacity 
-          style={styles.row} 
-          onPress={() => Alert.alert("Sécurité", "Option de changement de mot de passe à venir.")}
-        >
-          <Text style={styles.rowText}>Changer le mot de passe</Text>
-        </TouchableOpacity>
+        
+        <Text style={styles.sectionTitle}>À propos</Text>
+        <View style={styles.infoCard}>
+          <Text style={styles.infoText}>Version de l'application : v1.1.0</Text>
+          <Text style={styles.infoText}>Réseau Logistique UEMOA</Text>
+        </View>
       </View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f4f4f6' },
-  header: { padding: 16, backgroundColor: '#fff', borderBottomWidth: 1, borderColor: '#e9ecef', paddingTop: 40 },
-  headerTitle: { fontSize: 18, fontWeight: 'bold', color: '#212529' },
+  container: { flex: 1, backgroundColor: '#f8f9fa' },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, height: 60, borderBottomWidth: 1, borderColor: '#e9ecef', backgroundColor: '#ffffff' },
+  backBtn: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center' },
+  backText: { fontSize: 20, fontWeight: 'bold', color: '#212529' },
+  headerTitle: { fontSize: 16, fontWeight: 'bold', color: '#212529' },
   content: { padding: 16 },
-  row: { backgroundColor: '#fff', padding: 16, borderRadius: 8, marginBottom: 12, borderWidth: 1, borderColor: '#e9ecef' },
-  rowText: { fontSize: 14, color: '#212529', fontWeight: '500' }
+  sectionTitle: { fontSize: 14, fontWeight: 'bold', color: '#7f8c8d', marginTop: 20, marginBottom: 10, textTransform: 'uppercase', letterSpacing: 0.5 },
+  infoCard: { padding: 16, backgroundColor: '#ffffff', borderRadius: 8, borderWidth: 1, borderColor: '#e9ecef' },
+  infoText: { fontSize: 13.5, color: '#495057', marginBottom: 4 }
 });

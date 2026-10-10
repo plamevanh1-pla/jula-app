@@ -1,15 +1,16 @@
-  import Feather from '@expo/vector-icons/Feather';
+import Feather from '@expo/vector-icons/Feather';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Linking from 'expo-linking';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import AppearanceSelector from '../../../src/components/AppearanceSelector'; // 🎨 SELECOUTEUR MULTI-THÈMES
 import { supabase } from '../../../src/config/supabaseClient';
-import { useTheme } from '../../../src/context/ThemeContext'; // 🟢 INJECTION DE LA LUMIÈRE JULA
+import { useTheme } from '../../../src/context/ThemeContext'; // 🌓 INTERCEPTEUR CLAIR/SOMBRE AUTOMATIQUE
 
 export default function AccountScreen() {
   const router = useRouter();
-  const { isDarkMode } = useTheme(); // 🌓 INTERCEPTEUR CLAIR/SOMBRE AUTOMATIQUE
+  const { isDarkMode } = useTheme(); 
   const [userEmail, setUserEmail] = useState('');
   const [userRole, setUserRole] = useState('client'); 
   const [walletBalance, setWalletBalance] = useState(0);
@@ -57,10 +58,12 @@ export default function AccountScreen() {
     chargerDonneesProfil();
   }, []);
 
+  // 🎯 ROUTAGE ACTIONNÉ : La recherche envoie désormais l'utilisateur sur l'Accueil (home)
   const declencherRechercheGlobale = async () => {
     if (search.trim() === '') return;
     try {
       await AsyncStorage.setItem('jula_mot_recherche_temporaire', search.trim());
+      // Bascule automatiquement l'onglet vers l'accueil pour filtrer le catalogue
       router.push('/(client)/(tabs)/home');
     } catch (e) {
       console.log("Erreur transmission recherche", e);
@@ -81,7 +84,6 @@ export default function AccountScreen() {
     ]);
   };
 
-  // 🛠️ COMPOSANT INTERNE DE SÉCURITÉ DE COULEUR DES CELLULES
   const renderItem = (icon: string, text: string, path: string, isAlert = false) => (
     <TouchableOpacity 
       style={[styles.menuItem, { backgroundColor: isDarkMode ? '#1a1d21' : '#fff', borderColor: isDarkMode ? '#2d3139' : '#f2f2f2' }]} 
@@ -103,7 +105,7 @@ export default function AccountScreen() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: isDarkMode ? '#111417' : '#f2f2f2' }]}>
       
-      {/* 🔍 BARRE DE RECHERCHE SUPÉRIEURE INTERACTIVE */}
+      {/* 🔍 BARRE DE RECHERCHE SUPÉRIEURE CONNECTÉE DIRECTEMENT VERS L'ACCUEIL */}
       <View style={[styles.searchBarContainer, { backgroundColor: isDarkMode ? '#1a1d21' : '#fff', borderColor: isDarkMode ? '#2d3139' : '#e9ecef' }]}>
         <View style={[styles.searchField, { backgroundColor: isDarkMode ? '#111417' : '#e9ecef' }]}>
           <TouchableOpacity onPress={declencherRechercheGlobale}>
@@ -123,7 +125,7 @@ export default function AccountScreen() {
 
       <ScrollView showsVerticalScrollIndicator={false}>
         
-        {/* EN-TÊTE D'ACCUEIL DU PROFIL */}
+        {/* EN-TÊTE DU PROFIL ET DÉCONNEXION */}
         <View style={[styles.loginBlock, { backgroundColor: isDarkMode ? '#1a1d21' : '#fff' }]}>
           <View style={{ flex: 1 }}>
             <Text style={[styles.bonjourTxt, { color: isDarkMode ? '#fff' : '#212529' }]}>Bonjour ({currentCountry})</Text>
@@ -140,13 +142,13 @@ export default function AccountScreen() {
           )}
         </View>
 
-        {/* COMPARTIMENT SOLDE DISPONIBLE EN DIRECT */}
+        {/* COMPARTIMENT PORTAFEUILLE */}
         <View style={[styles.soldeLine, { backgroundColor: isDarkMode ? '#1a1d21' : '#fff', borderColor: isDarkMode ? '#2d3139' : '#f2f2f2' }]}>
           <Feather name="credit-card" size={20} color="#1072ba" />
           <Text style={styles.soldeTxt}>{userEmail ? `Votre solde disponible : ${walletBalance.toLocaleString('fr-FR')} FCFA` : "Connectez-vous pour voir votre solde disponible"}</Text>
         </View>
 
-        {/* BOUTONS DE CONTACT ASSISTANCE DIRECTE */}
+        {/* BOUTONS D'ASSISTANCE LOGISTIQUE DIRECTE */}
         <View style={styles.actionRow}>
           <TouchableOpacity style={styles.chatBtn} onPress={() => router.push('/chat')}>
             <Feather name="message-square" size={18} color="#fff" />
@@ -171,7 +173,7 @@ export default function AccountScreen() {
           </TouchableOpacity>
         </View>
 
-        <!-- ZONE INTERNATIONALE DE LIVRAISON -->
+        {/* 🟢 RÉGION DE LIVRAISON INTERNATIONALE */}
         <Text style={styles.sectionTitle}>Région de livraison</Text>
         <View style={[styles.menuGroup, { backgroundColor: isDarkMode ? '#1a1d21' : '#fff' }]}>
           <TouchableOpacity 
@@ -187,17 +189,17 @@ export default function AccountScreen() {
           </TouchableOpacity>
         </View>
 
+        {/* À PROPOS DE L'ENTREPRISE */}
         <Text style={styles.sectionTitle}>À propos de Jula</Text>
         <View style={[styles.menuGroup, { backgroundColor: isDarkMode ? '#1a1d21' : '#fff' }]}>
           {renderItem("info", "Aide & Assistance", "/(client)/help")}
           {renderItem("briefcase", "À propos de nos Services", "/(client)/services")}
         </View>
-
+        {/* MON COMPTE JULA */}
         <Text style={styles.sectionTitle}>Mon compte Jula</Text>
         <Text style={{ fontSize: 13, color: '#6c757d', marginLeft: 16, marginBottom: 12, fontWeight: '500' }}>
           👤 Compte Connecté : {masquerEmail(userEmail)}
         </Text>
-
         <View style={[styles.menuGroup, { backgroundColor: isDarkMode ? '#1a1d21' : '#fff' }]}>
           {renderItem("package", "Mes commandes", "/(client)/orders")}
           {renderItem("mail", "Boîte de réception", "/chat")}
@@ -208,6 +210,7 @@ export default function AccountScreen() {
           {renderItem("clock", "Consultés récemment", "/(client)/consultes-recemment")}
         </View>
 
+        {/* MES PARAMÈTRES */}
         <Text style={styles.sectionTitle}>Mes paramètres</Text>
         <View style={[styles.menuGroup, { backgroundColor: isDarkMode ? '#1a1d21' : '#fff' }]}>
           {renderItem("sliders", "Paramètres de paiement", "/(client)/payment-settings")}
@@ -216,7 +219,13 @@ export default function AccountScreen() {
           {renderItem("shield", "Politique de Confidentialité", "/(client)/about")}
         </View>
 
-        {/* 🔒 MODULE DE SÉCURITÉ ADMINISTRATEUR SÉCURISÉ ET RESTAURÉ VERS LE DASHBOARD EXPO */}
+        {/* 🌓 CONFIGURATION DE L'AFFICHAGE MULTI-OPTIONS */}
+        <Text style={styles.sectionTitle}>Configuration de l'affichage</Text>
+        <View style={{ paddingHorizontal: 16, paddingVertical: 12, backgroundColor: isDarkMode ? '#1a1d21' : '#fff', borderTopWidth: 1, borderBottomWidth: 1, borderColor: isDarkMode ? '#2d3139' : '#f2f2f2' }}>
+          <AppearanceSelector />
+        </View>
+
+        {/* 🔒 MODULE DE SÉCURITÉ ADMINISTRATEUR SUPERADMIN JACKY */}
         {userRole === 'admin' && (
           <View style={{ backgroundColor: isDarkMode ? '#111417' : '#f2f2f2', marginTop: 15 }}>
             <Text style={styles.sectionTitle}>Administration Privée</Text>
