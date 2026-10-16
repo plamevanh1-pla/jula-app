@@ -1,40 +1,43 @@
-  import AsyncStorage from '@react-native-async-storage/async-storage';
+   import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { supabase } from '../src/config/supabaseClient';
 
+// Liste officielle des 6 pays de l'empire Jula Express (Wave actif uniquement sur CI, SN, ML, BF)
+const countries = [
+  { code: 'CI', name: 'Côte d’Ivoire', flag: '🇨🇮', currency: 'XOF', hasWave: true },
+  { code: 'SN', name: 'Sénégal', flag: '🇸🇳', currency: 'XOF', hasWave: true },
+  { code: 'ML', name: 'Mali', flag: '🇲🇱', currency: 'XOF', hasWave: true },
+  { code: 'BF', name: 'Burkina Faso', flag: '🇧🇫', currency: 'XOF', hasWave: true },
+  { code: 'BJ', name: 'Bénin', flag: '🇧🇯', currency: 'XOF', hasWave: false },
+  { code: 'TG', name: 'Togo', flag: '🇹🇬', currency: 'XOF', hasWave: false },
+  { code: 'NE', name: 'Niger', flag: '🇳🇪', currency: 'XOF', hasWave: false },
+];
+
 export default function WelcomeCountryScreen() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
 
-  // 📡 MONITEUR DE SESSION INTELLIGENT : Écoute Supabase et évite les conflits
   useEffect(() => {
     async function verifierEtatConnexion() {
       const paysEnregistre = await AsyncStorage.getItem('jula_pays_choisi');
       const { data: { user } } = await supabase.auth.getUser();
-      
-      // ✨ CORRIGÉ : Propulsion directe et sécurisée sans l'historique fantôme
       if (user && paysEnregistre) {
         router.replace('/(client)/(tabs)/home');
       }
     }
     verifierEtatConnexion();
 
-    // Écouteur pour capter le retour de Google Auth
     const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
       if ((event === 'SIGNED_IN' || session) && session?.user) {
         const paysChoisi = await AsyncStorage.getItem('jula_pays_choisi') || 'CI';
-        
-        // On synchronise le profil cloud en arrière-plan sans bloquer le tactile
         await supabase.from('profiles').upsert({
           id: session.user.id,
           email: session.user.email,
           country: paysChoisi,
           role: 'client'
         }, { onConflict: 'id' });
-
-        // 🎉 PROPULSION DIRECTE SUR HOME ET SUPPRESSION DES ANCIENS ÉCRANS
         router.replace('/(client)/(tabs)/home');
       }
     });
@@ -44,15 +47,13 @@ export default function WelcomeCountryScreen() {
     };
   }, []);
 
-  const handleSelectCountry = async (countryCode: 'CI' | 'SN' | 'BJ' | 'TG' | 'ML' | 'BF' | 'NE') => {
+  const handleSelectCountry = async (countryCode: 'CI' | 'SN' | 'ML' | 'BF' | 'BJ' | 'TG' | 'NE') => {
     try {
       setLoading(true);
       await AsyncStorage.setItem('jula_pays_choisi', countryCode);
-
       const { data: { user } } = await supabase.auth.getUser();
 
       if (!user) {
-        // Mode invité : redirection directe vers l'accueil
         router.replace('/(client)/(tabs)/home');
         return;
       }
@@ -71,6 +72,7 @@ export default function WelcomeCountryScreen() {
       setLoading(false);
     }
   };
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.card}>
@@ -83,68 +85,18 @@ export default function WelcomeCountryScreen() {
         ) : (
           <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
             <View style={styles.grid}>
-              {/* Côte d'Ivoire */}
-              <TouchableOpacity style={styles.countryBtn} onPress={() => handleSelectCountry('CI')}>
-                <Text style={styles.flag}>🇨🇮</Text>
-                <View style={styles.countryInfo}>
-                  <Text style={styles.countryName}>Côte d'Ivoire</Text>
-                  <Text style={styles.badgeWave}>💙 Wave & Livraison</Text>
-                </View>
-              </TouchableOpacity>
-
-              {/* Sénégal */}
-              <TouchableOpacity style={styles.countryBtn} onPress={() => handleSelectCountry('SN')}>
-                <Text style={styles.flag}>🇸🇳</Text>
-                <View style={styles.countryInfo}>
-                  <Text style={styles.countryName}>Sénégal</Text>
-                  <Text style={styles.badgeWave}>💙 Wave & Livraison</Text>
-                </View>
-              </TouchableOpacity>
-
-              {/* Mali */}
-              <TouchableOpacity style={styles.countryBtn} onPress={() => handleSelectCountry('ML')}>
-                <Text style={styles.flag}>🇲🇱</Text>
-                <View style={styles.countryInfo}>
-                  <Text style={styles.countryName}>Mali</Text>
-                  <Text style={styles.badgeWave}>💙 Wave & Livraison</Text>
-                </View>
-              </TouchableOpacity>
-
-              {/* Burkina Faso */}
-              <TouchableOpacity style={styles.countryBtn} onPress={() => handleSelectCountry('BF')}>
-                <Text style={styles.flag}>🇧🇫</Text>
-                <View style={styles.countryInfo}>
-                  <Text style={styles.countryName}>Burkina Faso</Text>
-                  <Text style={styles.badgeWave}>💙 Wave & Livraison</Text>
-                </View>
-              </TouchableOpacity>
-
-              {/* Bénin */}
-              <TouchableOpacity style={styles.countryBtn} onPress={() => handleSelectCountry('BJ')}>
-                <Text style={styles.flag}>🇧🇯</Text>
-                <View style={styles.countryInfo}>
-                  <Text style={styles.countryName}>Bénin</Text>
-                  <Text style={styles.badgeWave}>💙 Wave & Livraison</Text>
-                </View>
-              </TouchableOpacity>
-
-              {/* Togo */}
-              <TouchableOpacity style={styles.countryBtn} onPress={() => handleSelectCountry('TG')}>
-                <Text style={styles.flag}>🇹🇬</Text>
-                <View style={styles.countryInfo}>
-                  <Text style={styles.countryName}>Togo</Text>
-                  <Text style={styles.badgeCash}>💵 Cash / Mobile local à la livraison</Text>
-                </View>
-              </TouchableOpacity>
-
-              {/* Niger */}
-              <TouchableOpacity style={styles.countryBtn} onPress={() => handleSelectCountry('NE')}>
-                <Text style={styles.flag}>🇳🇪</Text>
-                <View style={styles.countryInfo}>
-                  <Text style={styles.countryName}>Niger</Text>
-                  <Text style={styles.badgeCash}>💵 Cash / Mobile local à la livraison</Text>
-                </View>
-              </TouchableOpacity>
+              {countries.map((country) => (
+                <TouchableOpacity 
+                  key={country.code} 
+                  style={styles.countryBtn} 
+                  onPress={() => handleSelectCountry(country.code as any)}
+                >
+                  <Text style={styles.flag}>{country.flag}</Text>
+                  <View style={styles.countryInfo}>
+                    <Text style={styles.countryName}>{country.name}</Text>
+                  </View>
+                </TouchableOpacity>
+              ))}
             </View>
           </ScrollView>
         )}
@@ -162,11 +114,9 @@ const styles = StyleSheet.create({
   regionTitle: { fontSize: 12, color: '#7f8c8d', fontWeight: 'bold', marginBottom: 15, textTransform: 'uppercase' },
   scrollView: { width: '100%', maxHeight: 380 },
   grid: { width: '100%', gap: 10, paddingBottom: 5 },
-  countryBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#f8f9fa', padding: 12, borderRadius: 8, borderWidth: 1, borderColor: '#e9ecef' },
+  countryBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#f8f9fa', padding: 16, borderRadius: 8, borderWidth: 1, borderColor: '#e9ecef' },
   flag: { fontSize: 28, marginRight: 14 },
-  countryInfo: { flex: 1, flexDirection: 'column' },
+  countryInfo: { flex: 1, justifyContent: 'center' },
   countryName: { fontSize: 16, fontWeight: 'bold', color: '#212529' },
-  badgeWave: { fontSize: 11, color: '#0288D1', fontWeight: '600', marginTop: 2 },
-  badgeCash: { fontSize: 11, color: '#2E7D32', fontWeight: '600', marginTop: 2 },
   footerTxt: { fontSize: 11, color: '#95a5a6', marginTop: 20, fontWeight: '500' }
 });
