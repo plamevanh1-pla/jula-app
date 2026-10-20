@@ -40,6 +40,63 @@ app.post('/publish-product', async (req, res) => {
     }
 });
 
+// 🔔 8. MOTEUR DE PROPULSION DE NOTIFICATIONS DE MASSE
+app.post('/admin/send-notification', async (req, res) => {
+    const { title, message, target_role } = req.body;
+    try {
+        const { data, error } = await supabase
+            .from('notifications')
+            .insert([
+                {
+                    title: title || 'Alerte Jula Express',
+                    message: message,
+                    target_role: target_role || 'tous',
+                    created_at: new Date().toISOString()
+                }
+            ]);
+
+        if (error) throw error;
+        
+        // Ici, le serveur enregistre en base. L'APK mobile écoutera cette table en direct pour vibrer !
+        return res.status(200).json({ success: true, message: "Notification propulsée avec succès sur le réseau !" });
+    } catch (err) {
+        return res.status(500).json({ error: err.message });
+    }
+});
+
+// 📢 9. GESTIONNAIRE DE CAMPAGNES PUBLICITAIRES (AVEC DOUBLE TÉLÉVERSEMENT IMAGE)
+app.post('/admin/create-ad', upload.any(), async (req, res) => {
+    try {
+        const { title, vendedor_id } = req.body;
+        let finalAdUrl = 'https://unsplash.com';
+
+        if (req.files && req.files.length > 0) {
+            try {
+                const targetFile = req.files[0];
+                const uploadedUrl = await uploadToSupabase(targetFile, 'publicites');
+                if (uploadedUrl) finalAdUrl = uploadedUrl;
+            } catch (storageErr) {
+                console.error("Erreur de stockage de l'affiche publicitaire");
+            }
+        }
+
+        const { error } = await supabase
+            .from('advertisements')
+            .insert([
+                {
+                    title: title || 'Nouvelle Campagne Jula',
+                    image_url: finalAdUrl,
+                    vendedor_id: vendedor_id || null,
+                    created_at: new Date().toISOString()
+                }
+            ]);
+
+        if (error) throw error;
+        return res.status(200).json({ success: true, message: "Affiche publicitaire mise en ligne sur l'application !" });
+    } catch (err) {
+        return res.status(500).json({ error: err.message });
+    }
+});
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`\n=================================================`);
