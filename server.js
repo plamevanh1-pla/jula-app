@@ -150,6 +150,14 @@ app.post('/login-partner', async (req, res) => {
                 caGlobal: chiffreAffairesGlobal
             });
         }
+        // 📢 Si c'est un Chargé de Communication / Média Réel
+        if (userRole === 'media' || userRole === 'com' || userRole === 'communication') {
+            return res.render('dashboard-media', { 
+                email: profile.email, 
+                userId: profileId,
+                user: { id: profileId, email: profile.email }
+            });
+        }
 
 // 📢 11. GESTIONNAIRE DE CAMPAGNES PUBLICITAIRES (AVEC DOUBLE TÉLÉVERSEMENT IMAGE D'ORIGINE)
 app.post('/admin/create-ad', async (req, res) => {
