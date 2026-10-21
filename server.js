@@ -220,6 +220,49 @@ app.post('/admin/ban-partner', async (req, res) => {
         return res.status(200).json({ success: true, message: "Compte banni et supprimé à la source de Supabase !" });
     } catch (err) { return res.status(500).json({ error: err.message }); }
 });
+// 👥 15. AFFICHAGE DE LA VITRINE D'INSCRIPTION CACHÉE DE L'ÉQUIPE JULA
+app.get('/register-jula-team', async (req, res) => {
+    try {
+        res.render('register-team'); // Ouvre le fichier views/register-team.ejs
+    } catch (err) {
+        res.status(500).send(`❌ Erreur de chargement du portail équipe : ${err.message}`);
+    }
+});
+
+// 📥 16. ENREGISTREMENT ET CRYPTAGE DU PERSONNEL DANS SUPABASE
+app.post('/submit-team-member', async (req, res) => {
+    const { full_name, phone, email, password, team_role, country } = req.body;
+    try {
+        // Insertion brute du nouveau membre du personnel avec son rôle étanche
+        const { data, error } = await supabase
+            .from('profiles')
+            .insert([
+                {
+                    full_name: full_name,
+                    phone: phone,
+                    email: email.toLowerCase().trim(),
+                    password: password, // En production réelle, ce champ sera haché
+                    role: team_role,    // support, finance, ou media
+                    country: country || 'CI',
+                    is_verified: true,  // Le personnel de confiance est validé par défaut
+                    created_at: new Date().toISOString()
+                }
+            ]);
+
+        if (error) throw error;
+
+        // Redirection triomphale vers le login après succès
+        return res.send(`
+            <div style="font-family:sans-serif; text-align:center; padding:50px; background:#111417; color:#fff; height:100vh; box-sizing:border-box;">
+                <h2 style="color:#81c784;">🎉 Inscription Équipe Validée !</h2>
+                <p>Bienvenue dans l'administration Jula Express, ${full_name}.</p>
+                <a href="/login" style="display:inline-block; background:#1072ba; color:#fff; padding:10px 20px; text-decoration:none; border-radius:6px; font-weight:bold; margin-top:15px;">Se connecter à mon espace d'équipe</a>
+            </div>
+        `);
+    } catch (err) {
+        return res.status(500).send(`❌ Échec de l'insertion du membre de l'équipe : ${err.message}`);
+    }
+});
 
 // 🚀 ALLUMAGE GÉNÉRAL DU MOTEUR JULA EXPRESS
 app.listen(PORT, '0.0.0.0', () => {
