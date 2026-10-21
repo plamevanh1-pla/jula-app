@@ -125,6 +125,32 @@ app.post('/login-partner', async (req, res) => {
         res.status(500).send(`⚙️ Erreur de transition des portails Jula : ${err.message}`);
     }
 });
+        // 💰 Si c'est un Gestionnaire Financier / Comptable Réel
+        if (userRole === 'comptable' || userRole === 'finance') {
+            // Le serveur extrait les transactions encaissées ou à valider
+            const { data: allOrders } = await supabase
+                .from('orders')
+                .select('*');
+
+            // Calcul instantané du Chiffre d'Affaires Global pour son bilan
+            let chiffreAffairesGlobal = 0;
+            if (allOrders && allOrders.length > 0) {
+                allOrders.forEach(order => {
+                    if (order.status === 'Livré' || order.status === 'En cours de livraison') {
+                        chiffreAffairesGlobal += Number(order.total_price || order.price_fcfa || 0);
+                    }
+                });
+            }
+
+            return res.render('dashboard-finance', { 
+                email: profile.email, 
+                userId: profileId,
+                user: { id: profileId, email: profile.email },
+                orders: allOrders || [],
+                caGlobal: chiffreAffairesGlobal
+            });
+        }
+
 // 📢 11. GESTIONNAIRE DE CAMPAGNES PUBLICITAIRES (AVEC DOUBLE TÉLÉVERSEMENT IMAGE D'ORIGINE)
 app.post('/admin/create-ad', async (req, res) => {
     try {
