@@ -4,13 +4,14 @@ import * as Linking from 'expo-linking';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import AppearanceSelector from '../../../src/components/AppearanceSelector'; // 🎨 SELECOUTEUR MULTI-THÈMES
 import { supabase } from '../../../src/config/supabaseClient';
 import { useTheme } from '../../../src/context/ThemeContext'; // 🌓 INTERCEPTEUR CLAIR/SOMBRE AUTOMATIQUE
 
-export default function AccountScreen() {
-  const router = useRouter();
-  const { isDarkMode } = useTheme(); 
+ export default function AccountScreen() {
+  const router = useRouter(); 
+  const { themeMode, setThemeMode, isDarkMode } = useTheme();
+  const [isModalVisible, setIsModalVisible] = useState(false);
+
   const [userEmail, setUserEmail] = useState('');
   const [userRole, setUserRole] = useState('client'); 
   const [walletBalance, setWalletBalance] = useState(0);
@@ -219,11 +220,108 @@ export default function AccountScreen() {
           {renderItem("shield", "Politique de Confidentialité", "/(client)/about")}
         </View>
 
-        {/* 🌓 CONFIGURATION DE L'AFFICHAGE MULTI-OPTIONS */}
+                 {/* 🌓 CONFIGURATION DE L'AFFICHAGE MULTI-OPTIONS INTERACTIF */}
         <Text style={styles.sectionTitle}>Configuration de l'affichage</Text>
-        <View style={{ paddingHorizontal: 16, paddingVertical: 12, backgroundColor: isDarkMode ? '#1a1d21' : '#fff', borderTopWidth: 1, borderBottomWidth: 1, borderColor: isDarkMode ? '#2d3139' : '#f2f2f2' }}>
-          <AppearanceSelector />
-        </View>
+        
+        {/* Ligne cliquable qui ouvre la boîte de dialogue de ton image */}
+        <TouchableOpacity 
+          style={{ paddingHorizontal: 16, paddingVertical: 16, backgroundColor: isDarkMode ? '#1a1d21' : '#fff', borderTopWidth: 1, borderBottomWidth: 1, borderColor: isDarkMode ? '#2d3139' : '#f2f2f2', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}
+          onPress={() => setIsModalVisible(true)}
+        >
+          <View>
+            <Text style={{ fontSize: 16, color: isDarkMode ? '#ffffff' : '#212529', fontWeight: '500' }}>Apparence</Text>
+            <Text style={{ fontSize: 13, color: '#7f8c8d', marginTop: 4 }}>
+              {themeMode === 'system' ? 'Par défaut' : themeMode === 'light' ? 'Claire' : 'Sombre'}
+            </Text>
+          </View>
+        </TouchableOpacity>
+
+        {/* 🪐 LA BOÎTE SURGISSANTE (MODAL) EXACTE DE TA PHOTO */}
+        <Modal
+          animationType="fade"
+          transparent={true}
+          visible={isModalVisible}
+          onRequestClose={() => setIsModalVisible(false)}
+        >
+          <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center' }}>
+            <View style={{ backgroundColor: '#2d2d2d', width: '85%', borderRadius: 4, padding: 24, elevation: 5 }}>
+              
+              {/* Titre Blanc Principal */}
+              <Text style={{ color: '#ffffff', fontSize: 20, fontWeight: 'bold', marginBottom: 20 }}>Apparence</Text>
+
+              {/* ⚪ Option 1 : Par défaut */}
+              <TouchableOpacity 
+                style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 14 }} 
+                onPress={() => { setThemeMode('system'); setIsModalVisible(false); }}
+              >
+                <View style={{ 
+                  height: 20, 
+                  width: 20, 
+                  borderRadius: 10, 
+                  borderWidth: 2, 
+                  borderColor: '#ffffff', 
+                  backgroundColor: themeMode === 'system' ? '#ba68c8' : 'transparent',
+                  marginRight: 18,
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  {themeMode === 'system' && <View style={{ height: 10, width: 10, borderRadius: 5, backgroundColor: '#2d2d2d' }} />}
+                </View>
+                <Text style={{ color: '#ffffff', fontSize: 16 }}>Par défaut</Text>
+              </TouchableOpacity>
+
+              {/* ⚪ Option 2 : Claire */}
+              <TouchableOpacity 
+                style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 14 }} 
+                onPress={() => { setThemeMode('light'); setIsModalVisible(false); }}
+              >
+                <View style={{ 
+                  height: 20, 
+                  width: 20, 
+                  borderRadius: 10, 
+                  borderWidth: 2, 
+                  borderColor: '#ffffff', 
+                  backgroundColor: themeMode === 'light' ? '#ba68c8' : 'transparent',
+                  marginRight: 18,
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  {themeMode === 'light' && <View style={{ height: 10, width: 10, borderRadius: 5, backgroundColor: '#2d2d2d' }} />}
+                </View>
+                <Text style={{ color: '#ffffff', fontSize: 16 }}>Claire</Text>
+              </TouchableOpacity>
+
+              {/* 🟣 Option 3 : Sombre (Sélectionnée sur ta photo) */}
+              <TouchableOpacity 
+                style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 14 }} 
+                onPress={() => { setThemeMode('dark'); setIsModalVisible(false); }}
+              >
+                <View style={{ 
+                  height: 20, 
+                  width: 20, 
+                  borderRadius: 10, 
+                  borderWidth: 2, 
+                  borderColor: themeMode === 'dark' ? '#ba68c8' : '#ffffff', 
+                  backgroundColor: themeMode === 'dark' ? '#ba68c8' : 'transparent',
+                  marginRight: 18,
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  {themeMode === 'dark' && <View style={{ height: 10, width: 10, borderRadius: 5, backgroundColor: '#2d2d2d' }} />}
+                </View>
+                <Text style={{ color: '#ffffff', fontSize: 16 }}>Sombre</Text>
+              </TouchableOpacity>
+
+              {/* 🟣 Bouton ANNULER Violet en bas à droite */}
+              <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginTop: 24 }}>
+                <TouchableOpacity onPress={() => setIsModalVisible(false)}>
+                  <Text style={{ color: '#ba68c8', fontSize: 14, fontWeight: 'bold', letterSpacing: 0.5 }}>ANNULER</Text>
+                </TouchableOpacity>
+              </View>
+
+            </View>
+          </View>
+        </Modal>
 
         {/* 🔒 MODULE DE SÉCURITÉ ADMINISTRATEUR SUPERADMIN JACKY */}
         {userRole === 'admin' && (
