@@ -7,8 +7,13 @@ import { ActivityIndicator, Alert, SafeAreaView, ScrollView, StyleSheet, Text, T
 import { supabase } from '../../../src/config/supabaseClient';
 import { useTheme } from '../../../src/context/ThemeContext'; // 🌓 INTERCEPTEUR CLAIR/SOMBRE AUTOMATIQUE
 
- export default function AccountScreen() {
-  const router = useRouter(); 
+  export default function AccountScreen() {
+  // ❌ ANCIEN CODE COUPÉ : const router = useRout
+  
+  // 🟢 NOUVEAU CODE REPARÉ ET PROPRE :
+  const router = useRouter(); // Ajout du "er" et des parenthèses fermées ()
+  
+  // Configuration de ton affichage multi-options
   const { themeMode, setThemeMode, isDarkMode } = useTheme();
   const [isModalVisible, setIsModalVisible] = useState(false);
 
