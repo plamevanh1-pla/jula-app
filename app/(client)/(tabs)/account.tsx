@@ -3,17 +3,15 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Linking from 'expo-linking';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Modal, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { supabase } from '../../../src/config/supabaseClient';
 import { useTheme } from '../../../src/context/ThemeContext'; // 🌓 INTERCEPTEUR CLAIR/SOMBRE AUTOMATIQUE
 
-  export default function AccountScreen() {
-  // ❌ ANCIEN CODE COUPÉ : const router = useRout
-  
+export default function AccountScreen() {
   // 🟢 NOUVEAU CODE REPARÉ ET PROPRE :
-  const router = useRouter(); // Ajout du "er" et des parenthèses fermées ()
+  const router = useRouter(); 
   
-  // Configuration de ton affichage multi-options
+  // Configuration de ton affichage multi-options interconnecté
   const { themeMode, setThemeMode, isDarkMode } = useTheme();
   const [isModalVisible, setIsModalVisible] = useState(false);
 
@@ -194,38 +192,14 @@ import { useTheme } from '../../../src/context/ThemeContext'; // 🌓 INTERCEPTE
             <Feather name="chevron-right" size={16} color="#f57c00" />
           </TouchableOpacity>
         </View>
-
         {/* À PROPOS DE L'ENTREPRISE */}
         <Text style={styles.sectionTitle}>À propos de Jula</Text>
         <View style={[styles.menuGroup, { backgroundColor: isDarkMode ? '#1a1d21' : '#fff' }]}>
           {renderItem("info", "Aide & Assistance", "/(client)/help")}
           {renderItem("briefcase", "À propos de nos Services", "/(client)/services")}
         </View>
-        {/* MON COMPTE JULA */}
-        <Text style={styles.sectionTitle}>Mon compte Jula</Text>
-        <Text style={{ fontSize: 13, color: '#6c757d', marginLeft: 16, marginBottom: 12, fontWeight: '500' }}>
-          👤 Compte Connecté : {masquerEmail(userEmail)}
-        </Text>
-        <View style={[styles.menuGroup, { backgroundColor: isDarkMode ? '#1a1d21' : '#fff' }]}>
-          {renderItem("package", "Mes commandes", "/(client)/orders")}
-          {renderItem("mail", "Boîte de réception", "/chat")}
-          {renderItem("edit-3", "Notes et avis", "/(client)/reviews-history")}
-          {renderItem("gift", "Bons d'achat", "/(client)/vouchers")}
-          {renderItem("heart", "Favoris", "/favorites")}
-          {renderItem("shopping-bag", "Vendeurs suivis", "/(client)/vendeurs-suivis")}
-          {renderItem("clock", "Consultés récemment", "/(client)/consultes-recemment")}
-        </View>
 
-        {/* MES PARAMÈTRES */}
-        <Text style={styles.sectionTitle}>Mes paramètres</Text>
-        <View style={[styles.menuGroup, { backgroundColor: isDarkMode ? '#1a1d21' : '#fff' }]}>
-          {renderItem("sliders", "Paramètres de paiement", "/(client)/payment-settings")}
-          {renderItem("map-pin", "Carnet d'adresses", "/(client)/checkout-address")}
-          {renderItem("bell", "Préférences de notification", "/notifications")}
-          {renderItem("shield", "Politique de Confidentialité", "/(client)/about")}
-        </View>
-
-                 {/* 🌓 CONFIGURATION DE L'AFFICHAGE MULTI-OPTIONS INTERACTIF */}
+        {/* 🌓 CONFIGURATION DE L'AFFICHAGE MULTI-OPTIONS INTERACTIF */}
         <Text style={styles.sectionTitle}>Configuration de l'affichage</Text>
         
         {/* Ligne cliquable qui ouvre la boîte de dialogue de ton image */}
@@ -328,6 +302,30 @@ import { useTheme } from '../../../src/context/ThemeContext'; // 🌓 INTERCEPTE
           </View>
         </Modal>
 
+        {/* MON COMPTE JULA */}
+        <Text style={styles.sectionTitle}>Mon compte Jula</Text>
+        <Text style={{ fontSize: 13, color: '#6c757d', marginLeft: 16, marginBottom: 12, fontWeight: '500' }}>
+          👤 Compte Connecté : {masquerEmail(userEmail)}
+        </Text>
+        <View style={[styles.menuGroup, { backgroundColor: isDarkMode ? '#1a1d21' : '#fff' }]}>
+          {renderItem("package", "Mes commandes", "/(client)/orders")}
+          {renderItem("mail", "Boîte de réception", "/chat")}
+          {renderItem("edit-3", "Notes et avis", "/(client)/reviews-history")}
+          {renderItem("gift", "Bons d'achat", "/(client)/vouchers")}
+          {renderItem("heart", "Favoris", "/favorites")}
+          {renderItem("shopping-bag", "Vendeurs suivis", "/(client)/vendeurs-suivis")}
+          {renderItem("clock", "Consultés récemment", "/(client)/consultes-recemment")}
+        </View>
+
+        {/* MES PARAMÈTRES */}
+        <Text style={styles.sectionTitle}>Mes paramètres</Text>
+        <View style={[styles.menuGroup, { backgroundColor: isDarkMode ? '#1a1d21' : '#fff' }]}>
+          {renderItem("sliders", "Paramètres de paiement", "/(client)/payment-settings")}
+          {renderItem("map-pin", "Carnet d'adresses", "/(client)/checkout-address")}
+          {renderItem("bell", "Préférences de notification", "/notifications")}
+          {renderItem("shield", "Politique de Confidentialité", "/(client)/about")}
+        </View>
+
         {/* 🔒 MODULE DE SÉCURITÉ ADMINISTRATEUR SUPERADMIN JACKY */}
         {userRole === 'admin' && (
           <View style={{ backgroundColor: isDarkMode ? '#111417' : '#f2f2f2', marginTop: 15 }}>
@@ -353,7 +351,6 @@ import { useTheme } from '../../../src/context/ThemeContext'; // 🌓 INTERCEPTE
     </SafeAreaView>
   );
 }
-
 const styles = StyleSheet.create({
   container: { flex: 1 },
   searchBarContainer: { paddingHorizontal: 16, paddingBottom: 12, paddingTop: 40, borderBottomWidth: 1 },
