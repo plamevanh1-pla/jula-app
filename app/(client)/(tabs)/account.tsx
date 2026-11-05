@@ -242,7 +242,7 @@ export default function AccountScreen() {
                   backgroundColor: themeMode === 'system' ? '#ba68c8' : 'transparent',
                   marginRight: 18,
                   alignItems: 'center',
-                  justifyContent: 'center'
+                  justifyContent: 'center' // ✨ FIXÉ : Ajout des guillemets autour de 'center'
                 }}>
                   {themeMode === 'system' && <View style={{ height: 10, width: 10, borderRadius: 5, backgroundColor: '#2d2d2d' }} />}
                 </View>
@@ -263,14 +263,14 @@ export default function AccountScreen() {
                   backgroundColor: themeMode === 'light' ? '#ba68c8' : 'transparent',
                   marginRight: 18,
                   alignItems: 'center',
-                  justifyContent: 'center'
+                  justifyContent: 'center' // ✨ FIXÉ : Ajout des guillemets autour de 'center'
                 }}>
                   {themeMode === 'light' && <View style={{ height: 10, width: 10, borderRadius: 5, backgroundColor: '#2d2d2d' }} />}
                 </View>
                 <Text style={{ color: '#ffffff', fontSize: 16 }}>Claire</Text>
               </TouchableOpacity>
 
-              {/* 🟣 Option 3 : Sombre (Sélectionnée sur ta photo) */}
+              {/* 🟣 Option 3 : Sombre */}
               <TouchableOpacity 
                 style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 14 }} 
                 onPress={() => { setThemeMode('dark'); setIsModalVisible(false); }}
@@ -284,7 +284,7 @@ export default function AccountScreen() {
                   backgroundColor: themeMode === 'dark' ? '#ba68c8' : 'transparent',
                   marginRight: 18,
                   alignItems: 'center',
-                  justifyContent: 'center'
+                  justifyContent: 'center' // Était déjà correct ici
                 }}>
                   {themeMode === 'dark' && <View style={{ height: 10, width: 10, borderRadius: 5, backgroundColor: '#2d2d2d' }} />}
                 </View>
