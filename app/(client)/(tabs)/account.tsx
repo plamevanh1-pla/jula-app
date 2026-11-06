@@ -8,7 +8,6 @@ import { supabase } from '../../../src/config/supabaseClient';
 import { useTheme } from '../../../src/context/ThemeContext'; // 🌓 INTERCEPTEUR CLAIR/SOMBRE AUTOMATIQUE
 
 export default function AccountScreen() {
-  // 🟢 NOUVEAU CODE REPARÉ ET PROPRE :
   const router = useRouter(); 
   
   // Configuration de ton affichage multi-options interconnecté
@@ -33,10 +32,15 @@ export default function AccountScreen() {
     async function chargerDonneesProfil() {
       try {
         const pays = await AsyncStorage.getItem('jula_pays_choisi') || 'CI';
+        
+        // 🌍 ALIGNEMENT LOGISTIQUE DES 7 PAYS DE TON RÉSEAU UEMOA
+        if (pays === 'CI') setCurrentCountry('🇨🇮 Côte d\'Ivoire');
         if (pays === 'SN') setCurrentCountry('🇸🇳 Sénégal');
         if (pays === 'TG') setCurrentCountry('🇹🇬 Togo');
         if (pays === 'BJ') setCurrentCountry('🇧🇯 Bénin');
-        if (pays === 'CI') setCurrentCountry('🇨🇮 Côte d\'Ivoire');
+        if (pays === 'ML') setCurrentCountry('🇲🇱 Mali');
+        if (pays === 'BF') setCurrentCountry('🇧🇫 Burkina Faso');
+        if (pays === 'NE') setCurrentCountry('🇳🇪 Niger');
 
         if (supabase && supabase.auth) {
           const { data: { user } } = await supabase.auth.getUser();
@@ -62,12 +66,11 @@ export default function AccountScreen() {
     chargerDonneesProfil();
   }, []);
 
-  // 🎯 ROUTAGE ACTIONNÉ : La recherche envoie désormais l'utilisateur sur l'Accueil (home)
+  // 🎯 ROUTAGE RECHERCHE : Envoie désormais l'utilisateur sur l'Accueil (home)
   const declencherRechercheGlobale = async () => {
     if (search.trim() === '') return;
     try {
       await AsyncStorage.setItem('jula_mot_recherche_temporaire', search.trim());
-      // Bascule automatiquement l'onglet vers l'accueil pour filtrer le catalogue
       router.push('/(client)/(tabs)/home');
     } catch (e) {
       console.log("Erreur transmission recherche", e);
@@ -177,7 +180,7 @@ export default function AccountScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* 🟢 RÉGION DE LIVRAISON INTERNATIONALE */}
+        {/* 🌍 RÉGION DE LIVRAISON INTERNATIONALE DES 7 PAYS */}
         <Text style={styles.sectionTitle}>Région de livraison</Text>
         <View style={[styles.menuGroup, { backgroundColor: isDarkMode ? '#1a1d21' : '#fff' }]}>
           <TouchableOpacity 
@@ -215,7 +218,7 @@ export default function AccountScreen() {
           </View>
         </TouchableOpacity>
 
-        {/* 🪐 LA BOÎTE SURGISSANTE (MODAL) EXACTE DE TA PHOTO */}
+        {/* 🪐 LA BOÎTE SURGISSANTE (MODAL) EXACTE DE TA PHOTO — SÉCURISÉE DE TOUT BUG */}
         <Modal
           animationType="fade"
           transparent={true}
@@ -242,7 +245,7 @@ export default function AccountScreen() {
                   backgroundColor: themeMode === 'system' ? '#ba68c8' : 'transparent',
                   marginRight: 18,
                   alignItems: 'center',
-                  justifyContent: 'center' // ✨ FIXÉ : Ajout des guillemets autour de 'center'
+                  justifyContent: 'center' // ✨ FIXÉ : Chaîne entourée de guillemets
                 }}>
                   {themeMode === 'system' && <View style={{ height: 10, width: 10, borderRadius: 5, backgroundColor: '#2d2d2d' }} />}
                 </View>
@@ -263,14 +266,14 @@ export default function AccountScreen() {
                   backgroundColor: themeMode === 'light' ? '#ba68c8' : 'transparent',
                   marginRight: 18,
                   alignItems: 'center',
-                  justifyContent: 'center' // ✨ FIXÉ : Ajout des guillemets autour de 'center'
+                  justifyContent: 'center' // ✨ FIXÉ : Chaîne entourée de guillemets
                 }}>
                   {themeMode === 'light' && <View style={{ height: 10, width: 10, borderRadius: 5, backgroundColor: '#2d2d2d' }} />}
                 </View>
                 <Text style={{ color: '#ffffff', fontSize: 16 }}>Claire</Text>
               </TouchableOpacity>
 
-              {/* 🟣 Option 3 : Sombre */}
+              {/* 🟣 Option 3 : Sombre (Sélectionnée sur ta photo) */}
               <TouchableOpacity 
                 style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 14 }} 
                 onPress={() => { setThemeMode('dark'); setIsModalVisible(false); }}
@@ -284,7 +287,7 @@ export default function AccountScreen() {
                   backgroundColor: themeMode === 'dark' ? '#ba68c8' : 'transparent',
                   marginRight: 18,
                   alignItems: 'center',
-                  justifyContent: 'center' // Était déjà correct ici
+                  justifyContent: 'center' // Était déjà correct
                 }}>
                   {themeMode === 'dark' && <View style={{ height: 10, width: 10, borderRadius: 5, backgroundColor: '#2d2d2d' }} />}
                 </View>
