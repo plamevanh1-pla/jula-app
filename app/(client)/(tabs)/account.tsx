@@ -1,9 +1,20 @@
-import Feather from '@expo/vector-icons/Feather';
+ import Feather from '@expo/vector-icons/Feather';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Linking from 'expo-linking';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Modal, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Alert,
+  Modal,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
+} from 'react-native';
 import { supabase } from '../../../src/config/supabaseClient';
 import { useTheme } from '../../../src/context/ThemeContext'; // 🌓 INTERCEPTEUR CLAIR/SOMBRE AUTOMATIQUE
 
@@ -33,7 +44,7 @@ export default function AccountScreen() {
       try {
         const pays = await AsyncStorage.getItem('jula_pays_choisi') || 'CI';
         
-        // 🌍 ALIGNEMENT LOGISTIQUE DES 7 PAYS DE TON RÉSEAU UEMOA
+        // 🌍 LES 7 PAYS OFFICIELS DE TON RÉSEAU UEMOA
         if (pays === 'CI') setCurrentCountry('🇨🇮 Côte d\'Ivoire');
         if (pays === 'SN') setCurrentCountry('🇸🇳 Sénégal');
         if (pays === 'TG') setCurrentCountry('🇹🇬 Togo');
@@ -66,7 +77,7 @@ export default function AccountScreen() {
     chargerDonneesProfil();
   }, []);
 
-  // 🎯 ROUTAGE RECHERCHE : Envoie désormais l'utilisateur sur l'Accueil (home)
+  // 🎯 ROUTAGE RECHERCHE
   const declencherRechercheGlobale = async () => {
     if (search.trim() === '') return;
     try {
@@ -245,7 +256,7 @@ export default function AccountScreen() {
                   backgroundColor: themeMode === 'system' ? '#ba68c8' : 'transparent',
                   marginRight: 18,
                   alignItems: 'center',
-                  justifyContent: 'center' // ✨ FIXÉ : Chaîne entourée de guillemets
+                  justifyContent: 'center'
                 }}>
                   {themeMode === 'system' && <View style={{ height: 10, width: 10, borderRadius: 5, backgroundColor: '#2d2d2d' }} />}
                 </View>
@@ -266,7 +277,7 @@ export default function AccountScreen() {
                   backgroundColor: themeMode === 'light' ? '#ba68c8' : 'transparent',
                   marginRight: 18,
                   alignItems: 'center',
-                  justifyContent: 'center' // ✨ FIXÉ : Chaîne entourée de guillemets
+                  justifyContent: 'center'
                 }}>
                   {themeMode === 'light' && <View style={{ height: 10, width: 10, borderRadius: 5, backgroundColor: '#2d2d2d' }} />}
                 </View>
@@ -287,7 +298,7 @@ export default function AccountScreen() {
                   backgroundColor: themeMode === 'dark' ? '#ba68c8' : 'transparent',
                   marginRight: 18,
                   alignItems: 'center',
-                  justifyContent: 'center' // Était déjà correct
+                  justifyContent: 'center'
                 }}>
                   {themeMode === 'dark' && <View style={{ height: 10, width: 10, borderRadius: 5, backgroundColor: '#2d2d2d' }} />}
                 </View>
