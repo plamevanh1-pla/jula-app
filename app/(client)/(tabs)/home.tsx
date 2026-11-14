@@ -355,7 +355,7 @@ const styles = StyleSheet.create({
   noResultsTxt: { textAlign: 'center', color: '#7f8c8d', marginTop: 20 },
   
   /* 🎛️ COUCHE STYLES DE LA POP-UP MODALE FLASH */
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'center', center: 'center', alignItems: 'center', padding: 20 },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'center', alignItems: 'center', padding: 20 },
   modalCard: { width: '100%', maxWidth: 350, padding: 25, borderRadius: 16, borderWidth: 1, alignItems: 'center', position: 'relative' },
   closeAdButton: { position: 'absolute', top: -12, right: -12, backgroundColor: '#111417', borderRadius: 20, zIndex: 50 },
   modalAdBadge: { fontSize: 11, fontWeight: '800', letterSpacing: 1, marginBottom: 12, textAlign: 'center' },
