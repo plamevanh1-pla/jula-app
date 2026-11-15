@@ -1,8 +1,11 @@
-import Feather from '@expo/vector-icons/Feather';
+ import Feather from '@expo/vector-icons/Feather';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { supabase } from '../../src/config/supabaseClient';
+import { useTheme } from '../../src/context/ThemeContext';
+
+
 
 export default function CheckoutAddressScreen() {
   const [fullName, setFullName] = useState('');
@@ -13,8 +16,16 @@ export default function CheckoutAddressScreen() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  // Liste des pays de l'Afrique de l'Ouest (Zone UEMOA)
-  const countries = ["Bénin", "Côte d'Ivoire", "Sénégal", "Togo"];
+  // Liste complète des 7 pays de l'Afrique de l'Ouest (Zone UEMOA)
+  const countries = [
+    { name: "Bénin", flag: "🇧🇯" },
+    { name: "Burkina Faso", flag: "🇧🇫" },
+    { name: "Côte d'Ivoire", flag: "🇨🇮" },
+    { name: "Mali", flag: "🇲🇱" },
+    { name: "Niger", flag: "🇳🇪" },
+    { name: "Sénégal", flag: "🇸🇳" },
+    { name: "Togo", flag: "🇹🇬" },
+  ];
 
   const handleSaveAddress = async () => {
     const cleanName = fullName.trim();
@@ -77,13 +88,12 @@ export default function CheckoutAddressScreen() {
           <View style={styles.countryGrid}>
             {countries.map((item) => (
               <TouchableOpacity 
-                key={item} 
-                style={[styles.countryChip, country === item && styles.countryChipActive]}
-                onPress={() => setCountry(item)}
+                key={item.name} 
+                style={[styles.countryChip, country === item.name && styles.countryChipActive]}
+                onPress={() => setCountry(item.name)}
               >
-                <Text style={[styles.countryChipText, country === item && styles.countryChipTextActive]}>
-                  {item === "Côte d'Ivoire" ? "🇨🇮 " : item === "Sénégal" ? "🇸🇳 " : item === "Togo" ? "🇹🇬 " : "🇧🇯 "}
-                  {item}
+                <Text style={[styles.countryChipText, country === item.name && styles.countryChipTextActive]}>
+                  {item.flag} {item.name}
                 </Text>
               </TouchableOpacity>
             ))}
@@ -102,7 +112,7 @@ export default function CheckoutAddressScreen() {
           <Text style={styles.label}>Numéro de téléphone (avec indicatif) :</Text>
           <TextInput
             style={styles.input}
-            placeholder="Ex: +221 77..."
+            placeholder="Ex: +225 07... / +223 76..."
             value={phone}
             onChangeText={setPhone}
             keyboardType="phone-pad"
@@ -112,7 +122,7 @@ export default function CheckoutAddressScreen() {
           <Text style={styles.label}>Ville de destination :</Text>
           <TextInput
             style={styles.input}
-            placeholder="Ex: Dakar, Abidjan, Lomé, Cotonou"
+            placeholder="Ex: Abidjan, Bamako, Ouagadougou, Niamey, Dakar"
             value={city}
             onChangeText={setCity}
             placeholderTextColor="#7f8c8d"
@@ -121,7 +131,7 @@ export default function CheckoutAddressScreen() {
           <Text style={styles.label}>Quartier et précisions (Rue, Porte) :</Text>
           <TextInput
             style={styles.input}
-            placeholder="Ex: Medina, Cocody, Assivito"
+            placeholder="Ex: Cocody, Hamdallaye, Ouaga 2000, Plateau"
             value={neighborhood}
             onChangeText={setNeighborhood}
             placeholderTextColor="#7f8c8d"

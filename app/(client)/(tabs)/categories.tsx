@@ -2,9 +2,11 @@ import Feather from '@expo/vector-icons/Feather';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Image, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useTheme } from '../../../src/context/ThemeContext';
 
 export default function CategoriesScreen() {
   const router = useRouter();
+  const { isDarkMode } = useTheme();
   
   // Catégorie actuellement sélectionnée à gauche
   const [selectedParent, setSelectedParent] = useState('telephones');
@@ -29,33 +31,59 @@ export default function CategoriesScreen() {
 
   const current = categoriesData[selectedParent] || categoriesData['telephones'];
 
+  // Palette dynamique selon le mode sombre ou clair
+  const themeColors = {
+    bgMain: isDarkMode ? '#111417' : '#ffffff',
+    bgHeader: isDarkMode ? '#1a1d21' : '#ffffff',
+    bgSearch: isDarkMode ? '#2d3139' : '#f1f3f5',
+    bgLeft: isDarkMode ? '#16191d' : '#f8f9fa',
+    bgTabActive: isDarkMode ? '#111417' : '#ffffff',
+    bgCard: isDarkMode ? '#1a1d21' : '#ffffff',
+    bgImg: isDarkMode ? '#2d3139' : '#f8f9fa',
+    textMain: isDarkMode ? '#ffffff' : '#212529',
+    textSub: isDarkMode ? '#adb5bd' : '#495057',
+    border: isDarkMode ? '#2d3139' : '#e9ecef',
+  };
+
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: themeColors.bgMain }]}>
       {/* 🔍 Barre supérieure de recherche Style Jumia et icônes Feather */}
-      <View style={styles.header}>
+      <View style={[styles.header, { backgroundColor: themeColors.bgHeader, borderColor: themeColors.border }]}>
         <TouchableOpacity onPress={() => router.push('/(client)/(tabs)/home')}>
-          <Feather name="arrow-left" size={24} color="#212529" />
+          <Feather name="arrow-left" size={24} color={themeColors.textMain} />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.searchBar} onPress={() => router.push('/(client)/(tabs)/home')}>
-          <Feather name="search" size={18} color="#6c757d" />
+        <TouchableOpacity 
+          style={[styles.searchBar, { backgroundColor: themeColors.bgSearch }]} 
+          onPress={() => router.push('/(client)/(tabs)/home')}
+        >
+          <Feather name="search" size={18} color="#7f8c8d" />
           <Text style={styles.searchText}>Rechercher une catégorie sur Jula...</Text>
         </TouchableOpacity>
       </View>
+
       {/* 🗂️ ZONE DOUBLE COLONNE */}
       <View style={styles.body}>
         {/* COLONNE DE GAUCHE : Liste verticale complète des 14 classifications */}
-        <View style={styles.left}>
+        <View style={[styles.left, { backgroundColor: themeColors.bgLeft, borderColor: themeColors.border }]}>
           <ScrollView showsVerticalScrollIndicator={false}>
             {Object.keys(categoriesData).map(key => {
               const isActive = selectedParent === key;
               return (
                 <TouchableOpacity 
                   key={key} 
-                  style={[styles.tab, isActive && styles.tabActive]} 
+                  style={[
+                    styles.tab, 
+                    { borderColor: themeColors.border },
+                    isActive && { backgroundColor: themeColors.bgTabActive }
+                  ]} 
                   onPress={() => setSelectedParent(key)}
                 >
                   {isActive && <View style={styles.orangeLine} />}
-                  <Text style={[styles.tabText, isActive && styles.tabTextActive]}>
+                  <Text style={[
+                    styles.tabText, 
+                    { color: themeColors.textSub },
+                    isActive && styles.tabTextActive
+                  ]}>
                     {categoriesData[key].title}
                   </Text>
                 </TouchableOpacity>
@@ -67,16 +95,23 @@ export default function CategoriesScreen() {
         {/* COLONNE DE DROITE : Grille d'affichage dynamique */}
         <View style={styles.right}>
           <ScrollView contentContainerStyle={{ padding: 12 }} showsVerticalScrollIndicator={false}>
-            <Text style={styles.rightTitle}>{current.title}</Text>
+            <Text style={[styles.rightTitle, { borderColor: themeColors.border }]}>
+              {current.title}
+            </Text>
             <View style={styles.grid}>
               {current.items.map((item, i) => (
                 <TouchableOpacity 
                   key={i} 
-                  style={styles.card} 
+                  style={[
+                    styles.card, 
+                    { backgroundColor: themeColors.bgCard, borderColor: themeColors.border, borderWidth: isDarkMode ? 1 : 0 }
+                  ]} 
                   onPress={() => router.push({ pathname: '/(client)/(tabs)/home', params: { search: item.name } })}
                 >
-                  <Image source={{ uri: item.img }} style={styles.img} />
-                  <Text style={styles.name} numberOfLines={2}>{item.name}</Text>
+                  <Image source={{ uri: item.img }} style={[styles.img, { backgroundColor: themeColors.bgImg }]} />
+                  <Text style={[styles.name, { color: themeColors.textMain }]} numberOfLines={2}>
+                    {item.name}
+                  </Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -88,25 +123,24 @@ export default function CategoriesScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
-  header: { flexDirection: 'row', alignItems: 'center', padding: 12, borderBottomWidth: 1, borderColor: '#e9ecef', gap: 12, paddingTop: 40 },
-  searchBar: { flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: '#f1f3f5', paddingHorizontal: 12, height: 40, borderRadius: 20, gap: 8 },
-  searchText: { color: '#6c757d', fontSize: 13 },
+  container: { flex: 1 },
+  header: { flexDirection: 'row', alignItems: 'center', padding: 12, borderBottomWidth: 1, gap: 12, paddingTop: 40 },
+  searchBar: { flex: 1, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, height: 40, borderRadius: 20, gap: 8 },
+  searchText: { color: '#7f8c8d', fontSize: 13 },
   body: { flex: 1, flexDirection: 'row' },
   
   // Styles colonne de gauche
-  left: { width: '38%', backgroundColor: '#f8f9fa', borderRightWidth: 1, borderColor: '#e9ecef' },
-  tab: { paddingVertical: 16, paddingHorizontal: 8, borderBottomWidth: 1, borderColor: '#e9ecef', justifyContent: 'center', position: 'relative', minHeight: 65 },
-  tabActive: { backgroundColor: '#fff' },
+  left: { width: '38%', borderRightWidth: 1 },
+  tab: { paddingVertical: 16, paddingHorizontal: 8, borderBottomWidth: 1, justifyContent: 'center', position: 'relative', minHeight: 65 },
   orangeLine: { position: 'absolute', left: 0, top: 0, bottom: 0, width: 4, backgroundColor: '#f57c00' },
-  tabText: { fontSize: 11, color: '#495057', fontWeight: '500', paddingLeft: 4 },
+  tabText: { fontSize: 11, fontWeight: '500', paddingLeft: 4 },
   tabTextActive: { color: '#f57c00', fontWeight: 'bold' },
   
   // Styles colonne de droite
   right: { width: '62%' },
-  rightTitle: { fontSize: 14, fontWeight: 'bold', color: '#f57c00', marginBottom: 15, borderBottomWidth: 1, borderColor: '#f1f3f5', paddingBottom: 6 },
+  rightTitle: { fontSize: 14, fontWeight: 'bold', color: '#f57c00', marginBottom: 15, borderBottomWidth: 1, paddingBottom: 6 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  card: { width: '46%', alignItems: 'center', marginBottom: 12, backgroundColor: '#fff', borderRadius: 6, padding: 4 },
-  img: { width: '100%', height: 65, borderRadius: 6, resizeMode: 'contain', backgroundColor: '#f8f9fa' },
-  name: { fontSize: 10, textAlign: 'center', marginTop: 4, color: '#212529', fontWeight: '500', height: 28, lineHeight: 14 }
+  card: { width: '46%', alignItems: 'center', marginBottom: 12, borderRadius: 6, padding: 4 },
+  img: { width: '100%', height: 65, borderRadius: 6, resizeMode: 'contain' },
+  name: { fontSize: 10, textAlign: 'center', marginTop: 4, fontWeight: '500', height: 28, lineHeight: 14 }
 });

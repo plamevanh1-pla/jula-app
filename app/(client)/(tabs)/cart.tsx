@@ -1,63 +1,78 @@
-  import { useRouter } from 'expo-router';
+import Feather from '@expo/vector-icons/Feather';
+import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { ActivityIndicator, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-// 🟢 IMPORTATION DE LA BIBLIOTHÈQUE MODERNE FEATHER
-import Feather from '@expo/vector-icons/Feather';
+import { useTheme } from '../../../src/context/ThemeContext';
 
 export default function CartScreen() {
   const router = useRouter();
-  const [cartItems, setCartItems] = useState([]); // Tableau vide pour le mode test initial
+  const { isDarkMode } = useTheme();
+  const [cartItems, setCartItems] = useState([]);
   const [loading, setLoading] = useState(false);
+
+  // Palette dynamique selon le thème sélectionné
+  const themeColors = {
+    bgMain: isDarkMode ? '#111417' : '#f2f2f2',
+    bgHeader: isDarkMode ? '#1a1d21' : '#ffffff',
+    bgCircle: isDarkMode ? '#1a1d21' : '#e9ecef',
+    textMain: isDarkMode ? '#ffffff' : '#212529',
+    textSub: isDarkMode ? '#adb5bd' : '#6c757d',
+    border: isDarkMode ? '#2d3139' : '#dee2e6',
+  };
 
   if (loading) {
     return (
-      <SafeAreaView style={[styles.container, { justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' }]}>
+      <SafeAreaView style={[styles.container, { justifyContent: 'center', alignItems: 'center', backgroundColor: themeColors.bgMain }]}>
         <ActivityIndicator size="large" color="#f57c00" />
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: themeColors.bgMain }]}>
       {/* En-tête personnalisé style Jula */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Mon Panier</Text>
+      <View style={[styles.header, { backgroundColor: themeColors.bgHeader, borderColor: themeColors.border }]}>
+        <Text style={[styles.headerTitle, { color: themeColors.textMain }]}>Mon Panier</Text>
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {cartItems.length === 0 ? (
           <View style={styles.emptyContainer}>
-            <View style={styles.iconCircle}>
-              <Feather name="shopping-cart" size={50} color="#6c757d" />
+            <View style={[styles.iconCircle, { backgroundColor: themeColors.bgCircle }]}>
+              <Feather name="shopping-cart" size={50} color={isDarkMode ? '#adb5bd' : '#6c757d'} />
             </View>
-            <Text style={styles.emptyTitle}>Votre panier est vide</Text>
-            <Text style={styles.emptySubtitle}>Découvrez nos articles et commencez vos achats sur Jula !</Text>
+            <Text style={[styles.emptyTitle, { color: themeColors.textMain }]}>Votre panier est vide</Text>
+            <Text style={[styles.emptySubtitle, { color: themeColors.textSub }]}>
+              Découvrez nos articles et commencez vos achats sur Jula !
+            </Text>
             
-            <TouchableOpacity style={styles.btnRetourAccueil} onPress={() => router.push('/home')}>
+            <TouchableOpacity 
+              style={styles.btnRetourAccueil} 
+              onPress={() => router.push('/(client)/(tabs)/home')}
+            >
               <Text style={styles.btnRetourTxt}>Continuer mes achats</Text>
             </TouchableOpacity>
           </View>
         ) : (
           <View>
-            {/* La logique d'affichage de vos articles viendra ici plus tard */}
-            <Text style={{ textAlign: 'center', marginTop: 20 }}>Articles présents dans le panier</Text>
+            <Text style={{ textAlign: 'center', marginTop: 20, color: themeColors.textMain }}>
+              Articles présents dans le panier
+            </Text>
           </View>
         )}
       </ScrollView>
     </SafeAreaView>
   );
 }
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f2f2f2',
   },
   header: {
-    backgroundColor: '#fff',
     paddingHorizontal: 16,
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderColor: '#dee2e6',
     alignItems: 'center',
     justifyContent: 'center',
     paddingTop: 40,
@@ -65,7 +80,6 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#212529',
   },
   scrollContent: {
     flexGrow: 1,
@@ -80,7 +94,6 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     borderRadius: 50,
-    backgroundColor: '#e9ecef',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 20,
@@ -88,18 +101,16 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#212529',
     marginBottom: 8,
   },
   emptySubtitle: {
     fontSize: 14,
-    color: '#6c757d',
     textAlign: 'center',
     marginBottom: 24,
     lineHeight: 20,
   },
   btnRetourAccueil: {
-    backgroundColor: '#f57c00', // Ton orange Jula
+    backgroundColor: '#f57c00',
     paddingVertical: 14,
     paddingHorizontal: 32,
     borderRadius: 25,
