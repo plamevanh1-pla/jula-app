@@ -193,8 +193,8 @@ export default function HomeScreen() {
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* BANNIÈRE COMMERCIALE UNIVERSELLE */}
         <View style={[styles.banner, { backgroundColor: isDarkMode ? '#1a1d21' : '#fff', borderColor: isDarkMode ? '#2d3139' : '#eee' }]}>
-          <Text style={styles.bannerTitle}>🎉 Jula E-Commerce</Text>
-          <Text style={styles.bannerSub}>Réseau interconnecté • 4 Pays de la Zone CFA</Text>
+          <Text style={styles.bannerTitle}> Jula E-Commerce</Text>
+          <Text style={styles.bannerSub}>Réseau interconnecté • 7 Pays de la Zone CFA</Text>
         </View>
 
         {/* COMPARTIMENT HORIZONTAL DES CATÉGORIES INTERACTIVES */}
