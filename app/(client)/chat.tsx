@@ -1,7 +1,8 @@
-  import Feather from '@expo/vector-icons/Feather';
+ import Feather from '@expo/vector-icons/Feather';
 import { useRouter } from 'expo-router';
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
+  Animated,
   KeyboardAvoidingView,
   Platform,
   SafeAreaView,
@@ -13,7 +14,6 @@ import {
   View
 } from 'react-native';
 import { useTheme } from '../../src/context/ThemeContext';
-
 
 interface Message {
   id: string;
@@ -31,6 +31,26 @@ export default function ChatScreen() {
   const [inputText, setInputText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
 
+  // Animation de respiration fluide pour l'avatar du conseiller humain
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, {
+          toValue: isTyping ? 1.15 : 1.06,
+          duration: isTyping ? 400 : 1200,
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulseAnim, {
+          toValue: 1,
+          duration: isTyping ? 400 : 1200,
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+  }, [isTyping]);
+
   const [messagesByChannel, setMessagesByChannel] = useState<{
     support: Message[];
     logistique: Message[];
@@ -38,7 +58,7 @@ export default function ChatScreen() {
     support: [
       {
         id: '1',
-        text: 'Bonjour ! Je suis l’Assistant IA du Support Jula 🛠️. Comment puis-je vous aider avec votre compte, votre portefeuille FCFA ou votre inscription ?',
+        text: 'Bonjour ! Je suis Kévin, votre Conseiller Support Jula 👨🏾‍💼. Comment puis-je vous aider avec votre compte, votre portefeuille FCFA ou votre inscription ?',
         sender: 'bot',
         time: 'En ligne',
       },
@@ -46,7 +66,7 @@ export default function ChatScreen() {
     logistique: [
       {
         id: '1',
-        text: 'Bienvenue sur la Logistique IA Jula 📦 (7 pays UEMOA : CI, SN, ML, BF, NE, BJ, TG). Indiquez le numéro de votre commande ou votre ville de destination.',
+        text: 'Bienvenue sur la Logistique Jula 🚚 (7 pays UEMOA : CI, SN, ML, BF, NE, BJ, TG). Je suis Moussa, votre coordinateur. Indiquez le numéro de votre commande ou votre ville.',
         sender: 'bot',
         time: 'En ligne',
       },
@@ -70,15 +90,15 @@ export default function ChatScreen() {
       return 'Bien reçu ! Un agent logistique Jula vérifie l’itinéraire de votre colis sur le réseau UEMOA. Précisez votre ville de départ et d’arrivée si nécessaire.';
     } else {
       if (q.includes('paiement') || q.includes('payer') || q.includes('wave') || q.includes('orange') || q.includes('fcfa')) {
-        return 'Jula accepte les paiements sécurisés en Francs CFA via Mobile Money (Wave, Orange Money, MTN, Moov) et carte bancaire dans les 7 pays UEMOA.';
+        return 'Jula accepte le paiement en espèces à la livraison (Cash) ainsi que les transferts Wave au numéro officiel (+2250706073717) dans les 7 pays UEMOA.';
       }
       if (q.includes('vendeur') || q.includes('grossiste') || q.includes('boutique') || q.includes('vendre')) {
-        return 'Pour vendre sur Jula, ouvrez votre espace Vendeur et téléchargez vos pièces d’identité (CNI/Passeport) pour la validation de votre magasin.';
+        return 'Pour vendre sur Jula, ouvrez notre portail web officiel et téléchargez vos pièces d’identité (CNI/Passeport) pour la validation de votre magasin.';
       }
       if (q.includes('mot de passe') || q.includes('compte') || q.includes('connexion')) {
         return 'Pour sécuriser ou modifier vos accès, rendez-vous dans l’onglet « Compte » puis « Sécurité ».';
       }
-      return 'Merci pour votre message ! L’assistant Jula a bien noté votre demande. Un conseiller humain prendra le relais si une vérification manuelle est requise.';
+      return 'Merci pour votre message ! J’ai bien noté votre demande. Un conseiller humain prendra le relais si une vérification manuelle est requise.';
     }
   };
 
@@ -112,7 +132,6 @@ export default function ChatScreen() {
     setInputText('');
     setIsTyping(true);
 
-    // Simulation de réflexion de l'IA (1,2 seconde)
     setTimeout(() => {
       const reponse = genererReponseIA(texteUtilisateur, canalActuel);
       const botMsg: Message = {
@@ -144,21 +163,41 @@ export default function ChatScreen() {
   };
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: themeColors.bgMain }]}>
-      {/* En-tête dynamique */}
+      {/* En-tête dynamique avec Avatar Conseiller Animé */}
       <View style={[styles.header, { backgroundColor: themeColors.bgCard, borderColor: themeColors.border }]}>
         <TouchableOpacity onPress={handleBack} style={styles.backBtn}>
           <Feather name="arrow-left" size={24} color={themeColors.textMain} />
         </TouchableOpacity>
-        <View>
+
+        {activeChannel && (
+          <Animated.View
+            style={[
+              styles.animatedAvatarHeader,
+              {
+                transform: [{ scale: pulseAnim }],
+                backgroundColor: activeChannel === 'support' ? '#e3f2fd' : '#e8f5e9',
+              },
+            ]}
+          >
+            <Text style={{ fontSize: 22 }}>{activeChannel === 'support' ? '👨🏾‍💼' : '🚚'}</Text>
+            <View style={styles.onlineDot} />
+          </Animated.View>
+        )}
+
+        <View style={{ flex: 1 }}>
           <Text style={[styles.headerTitle, { color: themeColors.textMain }]}>
             {activeChannel === 'support'
-              ? 'Salon Support Jula 🛠️'
+              ? 'Kévin • Support Jula'
               : activeChannel === 'logistique'
-              ? 'Salon Logistique Jula 📦'
+              ? 'Moussa • Logistique Jula'
               : 'Boîte de réception'}
           </Text>
           <Text style={styles.headerSubtitle}>
-            {activeChannel ? 'Assistant IA Jula • En ligne' : 'Messagerie Interconnectée Jula'}
+            {activeChannel
+              ? isTyping
+                ? 'En train d’écrire...'
+                : 'Conseiller IA en ligne • Relais humain actif'
+              : 'Messagerie Interconnectée Jula'}
           </Text>
         </View>
       </View>
@@ -171,17 +210,26 @@ export default function ChatScreen() {
           /* VUE 1 : LISTE DES SALONS DE DISCUSSION */
           <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
             <View style={[styles.channelsBlock, { backgroundColor: themeColors.bgCard, borderColor: themeColors.border }]}>
-              <Text style={styles.channelLabel}>💬 Canaux d'assistance Jula</Text>
+              <Text style={styles.channelLabel}>💬 Conseillers d'assistance Jula</Text>
 
               <TouchableOpacity
                 style={[styles.channelItem, { borderColor: themeColors.border }]}
                 onPress={() => setActiveChannel('support')}
               >
-                <View style={[styles.iconBox, { backgroundColor: isDarkMode ? 'rgba(33, 150, 243, 0.15)' : '#e3f2fd' }]}>
-                  <Text style={styles.channelIcon}>🛠️</Text>
-                </View>
+                <Animated.View
+                  style={[
+                    styles.iconBox,
+                    {
+                      transform: [{ scale: pulseAnim }],
+                      backgroundColor: isDarkMode ? 'rgba(33, 150, 243, 0.2)' : '#e3f2fd',
+                    },
+                  ]}
+                >
+                  <Text style={styles.channelIcon}>👨🏾‍💼</Text>
+                  <View style={styles.onlineDotSmall} />
+                </Animated.View>
                 <View style={{ flex: 1 }}>
-                  <Text style={[styles.channelName, { color: themeColors.textMain }]}>Support Jula (IA)</Text>
+                  <Text style={[styles.channelName, { color: themeColors.textMain }]}>Kévin • Support Jula (IA)</Text>
                   <Text style={styles.channelDesc}>Aide instantanée sur ton compte et tes paiements</Text>
                 </View>
                 <Feather name="chevron-right" size={20} color="#adb5bd" />
@@ -191,11 +239,20 @@ export default function ChatScreen() {
                 style={[styles.channelItem, { borderBottomWidth: 0 }]}
                 onPress={() => setActiveChannel('logistique')}
               >
-                <View style={[styles.iconBox, { backgroundColor: isDarkMode ? 'rgba(76, 175, 80, 0.15)' : '#e8f5e9' }]}>
-                  <Text style={styles.channelIcon}>📦</Text>
-                </View>
+                <Animated.View
+                  style={[
+                    styles.iconBox,
+                    {
+                      transform: [{ scale: pulseAnim }],
+                      backgroundColor: isDarkMode ? 'rgba(76, 175, 80, 0.2)' : '#e8f5e9',
+                    },
+                  ]}
+                >
+                  <Text style={styles.channelIcon}>🚚</Text>
+                  <View style={styles.onlineDotSmall} />
+                </Animated.View>
                 <View style={{ flex: 1 }}>
-                  <Text style={[styles.channelName, { color: themeColors.textMain }]}>Logistique Jula (IA)</Text>
+                  <Text style={[styles.channelName, { color: themeColors.textMain }]}>Moussa • Logistique Jula (IA)</Text>
                   <Text style={styles.channelDesc}>Suivi d'expédition entre les 7 pays UEMOA</Text>
                 </View>
                 <Feather name="chevron-right" size={20} color="#adb5bd" />
@@ -220,38 +277,71 @@ export default function ChatScreen() {
             showsVerticalScrollIndicator={false}
             onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
           >
-            {currentMessages.map((msg) => (
-              <View
-                key={msg.id}
-                style={[
-                  styles.messageBubble,
-                  msg.sender === 'user'
-                    ? styles.userBubble
-                    : [styles.botBubble, { backgroundColor: themeColors.bgCard, borderColor: themeColors.border }],
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.messageText,
-                    msg.sender === 'user' ? styles.userText : { color: themeColors.textMain },
-                  ]}
+            {currentMessages.map((msg) => {
+              const isUser = msg.sender === 'user';
+              return (
+                <View
+                  key={msg.id}
+                  style={[styles.msgRow, isUser ? { justifyContent: 'flex-end' } : { justifyContent: 'flex-start' }]}
                 >
-                  {msg.text}
-                </Text>
-                <Text
-                  style={[
-                    styles.timeText,
-                    msg.sender === 'user' ? { color: '#ffe0b2' } : { color: '#868e96' },
-                  ]}
-                >
-                  {msg.time}
-                </Text>
-              </View>
-            ))}
+                  {!isUser && (
+                    <View
+                      style={[
+                        styles.miniBotAvatar,
+                        { backgroundColor: activeChannel === 'support' ? '#e3f2fd' : '#e8f5e9' },
+                      ]}
+                    >
+                      <Text style={{ fontSize: 16 }}>{activeChannel === 'support' ? '👨🏾‍💼' : '🚚'}</Text>
+                    </View>
+                  )}
+
+                  <View
+                    style={[
+                      styles.messageBubble,
+                      isUser
+                        ? styles.userBubble
+                        : [styles.botBubble, { backgroundColor: themeColors.bgCard, borderColor: themeColors.border }],
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.messageText,
+                        isUser ? styles.userText : { color: themeColors.textMain },
+                      ]}
+                    >
+                      {msg.text}
+                    </Text>
+                    <Text
+                      style={[
+                        styles.timeText,
+                        isUser ? { color: '#ffe0b2' } : { color: '#868e96' },
+                      ]}
+                    >
+                      {msg.time}
+                    </Text>
+                  </View>
+                </View>
+              );
+            })}
 
             {isTyping && (
-              <View style={[styles.typingBubble, { backgroundColor: themeColors.bgCard, borderColor: themeColors.border }]}>
-                <Text style={styles.typingText}>Assistant Jula écrit...</Text>
+              <View style={styles.msgRow}>
+                <Animated.View
+                  style={[
+                    styles.miniBotAvatar,
+                    {
+                      transform: [{ scale: pulseAnim }],
+                      backgroundColor: activeChannel === 'support' ? '#e3f2fd' : '#e8f5e9',
+                    },
+                  ]}
+                >
+                  <Text style={{ fontSize: 16 }}>{activeChannel === 'support' ? '👨🏾‍💼' : '🚚'}</Text>
+                </Animated.View>
+                <View style={[styles.typingBubble, { backgroundColor: themeColors.bgCard, borderColor: themeColors.border }]}>
+                  <Text style={styles.typingText}>
+                    {activeChannel === 'support' ? 'Kévin écrit...' : 'Moussa écrit...'}
+                  </Text>
+                </View>
               </View>
             )}
           </ScrollView>
@@ -280,32 +370,37 @@ export default function ChatScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: { flexDirection: 'row', alignItems: 'center', padding: 16, borderBottomWidth: 1, paddingTop: 40, gap: 16 },
+  header: { flexDirection: 'row', alignItems: 'center', padding: 14, borderBottomWidth: 1, paddingTop: 40, gap: 12 },
   backBtn: { padding: 4 },
-  headerTitle: { fontSize: 17, fontWeight: 'bold' },
+  animatedAvatarHeader: { width: 42, height: 42, borderRadius: 21, justifyContent: 'center', alignItems: 'center', position: 'relative' },
+  onlineDot: { width: 11, height: 11, borderRadius: 6, backgroundColor: '#2e7d32', position: 'absolute', bottom: 0, right: 0, borderWidth: 2, borderColor: '#fff' },
+  onlineDotSmall: { width: 10, height: 10, borderRadius: 5, backgroundColor: '#2e7d32', position: 'absolute', bottom: 0, right: 0, borderWidth: 1.5, borderColor: '#fff' },
+  headerTitle: { fontSize: 16, fontWeight: 'bold' },
   headerSubtitle: { fontSize: 11, color: '#f57c00', fontWeight: '600', marginTop: 1 },
   scrollContent: { flexGrow: 1, padding: 16 },
-  channelsBlock: { borderRadius: 8, padding: 12, marginBottom: 20, borderWidth: 1 },
+  channelsBlock: { borderRadius: 10, padding: 14, marginBottom: 20, borderWidth: 1 },
   channelLabel: { fontSize: 12, fontWeight: 'bold', color: '#7f8c8d', marginBottom: 12, textTransform: 'uppercase' },
-  channelItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, gap: 12 },
-  iconBox: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center' },
-  channelIcon: { fontSize: 18 },
-  channelName: { fontSize: 14, fontWeight: 'bold' },
-  channelDesc: { fontSize: 11, color: '#7f8c8d', marginTop: 2 },
-  emptyContainer: { alignItems: 'center', justifyContent: 'center', marginTop: 30, paddingHorizontal: 16 },
-  iconCircle: { width: 80, height: 80, borderRadius: 40, justifyContent: 'center', alignItems: 'center', marginBottom: 16 },
-  emptyTitle: { fontSize: 16, fontWeight: 'bold', marginBottom: 6 },
-  emptySubtitle: { fontSize: 12, textAlign: 'center', lineHeight: 18 },
-  chatArea: { flexGrow: 1, padding: 16, gap: 10 },
-  messageBubble: { maxWidth: '80%', padding: 12, borderRadius: 12 },
-  userBubble: { alignSelf: 'flex-end', backgroundColor: '#f57c00', borderBottomRightRadius: 2 },
-  botBubble: { alignSelf: 'flex-start', borderWidth: 1, borderBottomLeftRadius: 2 },
-  messageText: { fontSize: 14, lineHeight: 20 },
-  userText: { color: '#fff' },
-  timeText: { fontSize: 10, marginTop: 4, alignSelf: 'flex-end' },
-  typingBubble: { alignSelf: 'flex-start', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12, borderWidth: 1 },
-  typingText: { fontSize: 12, color: '#f57c00', fontStyle: 'italic' },
-  inputContainer: { flexDirection: 'row', padding: 12, borderTopWidth: 1, alignItems: 'center', gap: 10 },
-  input: { flex: 1, borderRadius: 20, paddingHorizontal: 16, height: 40, fontSize: 14 },
-  sendBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#f57c00', justifyContent: 'center', alignItems: 'center' }
+channelItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, gap: 12 },
+iconBox: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center', position: 'relative' },
+channelIcon: { fontSize: 20 },
+channelName: { fontSize: 14, fontWeight: 'bold' },
+channelDesc: { fontSize: 11, color: '#7f8c8d', marginTop: 2 },
+emptyContainer: { alignItems: 'center', justifyContent: 'center', marginTop: 30, paddingHorizontal: 16 },
+iconCircle: { width: 80, height: 80, borderRadius: 40, justifyContent: 'center', alignItems: 'center', marginBottom: 16 },
+emptyTitle: { fontSize: 16, fontWeight: 'bold', marginBottom: 6 },
+emptySubtitle: { fontSize: 12, textAlign: 'center', lineHeight: 18 },
+chatArea: { flexGrow: 1, padding: 16, gap: 12 },
+msgRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 8 },
+miniBotAvatar: { width: 32, height: 32, borderRadius: 16, justifyContent: 'center', alignItems: 'center' },
+messageBubble: { maxWidth: '76%', padding: 12, borderRadius: 14 },
+userBubble: { backgroundColor: '#f57c00', borderBottomRightRadius: 2 },
+botBubble: { borderWidth: 1, borderBottomLeftRadius: 2 },
+messageText: { fontSize: 14, lineHeight: 20 },
+userText: { color: '#fff' },
+timeText: { fontSize: 10, marginTop: 4, alignSelf: 'flex-end' },
+typingBubble: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 14, borderWidth: 1, borderBottomLeftRadius: 2 },
+typingText: { fontSize: 12, color: '#f57c00', fontStyle: 'italic' },
+inputContainer: { flexDirection: 'row', padding: 12, borderTopWidth: 1, alignItems: 'center', gap: 10 },
+input: { flex: 1, borderRadius: 20, paddingHorizontal: 16, height: 42, fontSize: 14 },
+sendBtn: { width: 42, height: 42, borderRadius: 21, backgroundColor: '#f57c00', justifyContent: 'center', alignItems: 'center' }
 });

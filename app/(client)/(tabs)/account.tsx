@@ -39,11 +39,11 @@ export default function AccountScreen() {
     return `${nom.substring(0, 2)}**********@${domaine}`;
   };
 
-  useEffect(() => {
+   useEffect(() => {
     async function chargerDonneesProfil() {
       try {
         const pays = await AsyncStorage.getItem('jula_pays_choisi') || 'CI';
-        
+
         // 🌍 LES 7 PAYS OFFICIELS DE TON RÉSEAU UEMOA
         if (pays === 'CI') setCurrentCountry('🇨🇮 Côte d\'Ivoire');
         if (pays === 'SN') setCurrentCountry('🇸🇳 Sénégal');

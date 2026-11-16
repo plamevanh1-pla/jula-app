@@ -1,19 +1,22 @@
- import Feather from '@expo/vector-icons/Feather';
+import Feather from '@expo/vector-icons/Feather';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Image, Modal, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Image, Linking, Modal, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { supabase } from '../../../src/config/supabaseClient';
-import { useTheme } from '../../../src/context/ThemeContext'; // 🟢 INJECTION DE LA LUMIÈRE JULA
+import { useTheme } from '../../../src/context/ThemeContext';
 
 export default function HomeScreen() {
   const router = useRouter();
-  const { isDarkMode } = useTheme(); // 🌓 INTERCEPTEUR CLAIR/SOMBRE AUTOMATIQUE
+  const { isDarkMode } = useTheme();
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [ad, setAd] = useState<any>(null);
-  const [isAdVisible, setIsAdVisible] = useState(false); // ❌ Gestion de l'ouverture de la Pop-up
+  const [isAdVisible, setIsAdVisible] = useState(false);
+
+  // 🔧 ADRESSE OFFICIELLE DE TON SITE WEB RENDER (Modifie ici si ton lien est différent)
+  const URL_SITE_WEB_JULA = 'https://jula-web.onrender.com';
 
   const [selectedCategoryKeyword, setSelectedCategoryKeyword] = useState<string>('');
   const [countryFilter, setCountryFilter] = useState<string>('CI');
@@ -28,15 +31,24 @@ export default function HomeScreen() {
     { id: '6', title: '🔌 Électronique', keyword: 'elect' }
   ];
 
-  useEffect(() => {
+    useEffect(() => {
     async function initHome() {
       const pays = await AsyncStorage.getItem('jula_pays_choisi') || 'CI';
       setCountryFilter(pays);
+
+      // 🔍 RÉCUPÉRATION DU MOT RECHERCHÉ DEPUIS LA PAGE PROFIL
+      const motRecherche = await AsyncStorage.getItem('jula_mot_recherche_temporaire');
+      if (motRecherche) {
+        setSearch(motRecherche);
+        await AsyncStorage.removeItem('jula_mot_recherche_temporaire');
+      }
+
       fetchProducts(pays);
       fetchActiveAd();
     }
     initHome();
   }, []);
+
 
   const fetchProducts = async (paysId: string) => {
     try {
@@ -64,14 +76,15 @@ export default function HomeScreen() {
         .from('ads')
         .select('*')
         .eq('is_active', true)
+        .order('created_at', { ascending: false })
         .limit(1)
         .single();
       if (!error && data) {
         setAd(data);
-        setIsAdVisible(true); // 🚀 Ouvre automatiquement la Pop-up au lancement !
+        setIsAdVisible(true);
       }
     } catch (err) {
-      console.log("Pas de publicité active ou erreur:", err);
+      console.log("Pas de publicité active :", err);
     }
   };
 
@@ -81,7 +94,6 @@ export default function HomeScreen() {
              p.title?.toLowerCase().includes(categoryKeyword.toLowerCase());
     });
   };
-
   const searchedProducts = products.filter(p => {
     const matchesSearch = p.title?.toLowerCase().includes(search.toLowerCase());
     const matchesCategory = selectedCategoryKeyword !== '' ? (
@@ -102,7 +114,7 @@ export default function HomeScreen() {
       <View style={styles.sectionContainer}>
         <View style={[styles.sectionHeaderRow, { backgroundColor }]}>
           <Text style={styles.sectionTitle}>{title}</Text>
-          <TouchableOpacity onPress={() => router.push('/(client)/categories')}>
+          <TouchableOpacity onPress={() => router.push('/(client)/(tabs)/categories')}>
             <Text style={styles.seeAllText}>Voir Tout</Text>
           </TouchableOpacity>
         </View>
@@ -131,10 +143,11 @@ export default function HomeScreen() {
       </View>
     );
   };
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: isDarkMode ? '#111417' : '#f4f4f6' }]}>
       
-      {/* ❌ 1. FENÊTRE POP-UP PUBLICITAIRE INTELLIGENTE AVEC BOUTON CROIX */}
+      {/* FENÊTRE POP-UP PUBLICITAIRE AVEC REDIRECTION VERS TON SITE WEB */}
       <Modal
         animationType="fade"
         transparent={true}
@@ -144,7 +157,7 @@ export default function HomeScreen() {
         <View style={styles.modalOverlay}>
           <View style={[styles.modalCard, { backgroundColor: isDarkMode ? '#1a1d21' : '#fff', borderColor: isDarkMode ? '#2d3139' : '#eee' }]}>
             
-            {/* 🎯 LA CROIX DE FERMETURE EN HAUT À DROITE */}
+            {/* CROIX DE FERMETURE */}
             <TouchableOpacity 
               style={styles.closeAdButton} 
               onPress={() => setIsAdVisible(false)}
@@ -162,10 +175,10 @@ export default function HomeScreen() {
                   style={styles.modalActionButton} 
                   onPress={() => {
                     setIsAdVisible(false);
-                    router.push('/(client)/categories');
+                    Linking.openURL(URL_SITE_WEB_JULA);
                   }}
                 >
-                  <Text style={styles.modalActionButtonText}>Profiter de l'offre maintenant ➔</Text>
+                  <Text style={styles.modalActionButtonText}>Visiter le portail Jula ➔</Text>
                 </TouchableOpacity>
               </View>
             )}
@@ -173,7 +186,7 @@ export default function HomeScreen() {
         </View>
       </Modal>
 
-      {/* 🔍 EN-TÊTE ET BARRE DE RECHERCHE CLIENT */}
+      {/* EN-TÊTE ET BARRE DE RECHERCHE CLIENT */}
       <View style={[styles.searchBarContainer, { backgroundColor: isDarkMode ? '#1a1d21' : '#fff', borderColor: isDarkMode ? '#2d3139' : '#e9ecef' }]}>
         <View style={[styles.searchField, { backgroundColor: isDarkMode ? '#111417' : '#f1f3f5' }]}>
           <Feather name="search" size={18} color="#6c757d" />
@@ -193,8 +206,8 @@ export default function HomeScreen() {
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* BANNIÈRE COMMERCIALE UNIVERSELLE */}
         <View style={[styles.banner, { backgroundColor: isDarkMode ? '#1a1d21' : '#fff', borderColor: isDarkMode ? '#2d3139' : '#eee' }]}>
-          <Text style={styles.bannerTitle}> Jula E-Commerce</Text>
-          <Text style={styles.bannerSub}>Réseau interconnecté • 7 Pays de la Zone CFA</Text>
+          <Text style={styles.bannerTitle}>Jula E-Commerce</Text>
+          <Text style={styles.bannerSub}>Réseau interconnecté • 7 Pays de la Zone UEMOA</Text>
         </View>
 
         {/* COMPARTIMENT HORIZONTAL DES CATÉGORIES INTERACTIVES */}
@@ -212,12 +225,13 @@ export default function HomeScreen() {
             );
           })}
         </ScrollView>
-
         {loading ? (
           <ActivityIndicator size="large" color="#f57c00" style={{ marginTop: 40 }} />
         ) : (search.length > 0 || selectedCategoryKeyword !== '') ? (
           <View style={styles.searchResultsContainer}>
-            <Text style={[styles.searchResultsTitle, { color: isDarkMode ? '#fff' : '#212529' }]}>Articles correspondants ({searchedProducts.length})</Text>
+            <Text style={[styles.searchResultsTitle, { color: isDarkMode ? '#fff' : '#212529' }]}>
+              Articles correspondants ({searchedProducts.length})
+            </Text>
             {searchedProducts.length === 0 ? (
               <Text style={styles.noResultsTxt}>❌ Aucun article ne correspond à votre recherche.</Text>
             ) : (
@@ -247,7 +261,9 @@ export default function HomeScreen() {
           </View>
         ) : (
           <View style={{ marginBottom: 15 }}>
-            <Text style={[styles.globalCatalogLabel, { color: isDarkMode ? '#fff' : '#212529' }]}>🔥 Grand Catalogue des Grossistes en Direct</Text>
+            <Text style={[styles.globalCatalogLabel, { color: isDarkMode ? '#fff' : '#212529' }]}>
+              🔥 Grand Catalogue des Grossistes en Direct
+            </Text>
             
             <View style={styles.jumiaGrid}>
               {products.map((item) => {
@@ -260,7 +276,7 @@ export default function HomeScreen() {
                 const pourcentageBarreStock = Math.min((item.stock_quantity / stockMaximumSimule) * 100, 100);
                 let couleurBarre = '#2e7d32'; 
                 if (item.stock_quantity <= 5) couleurBarre = '#d32f2f'; 
-                else if (item.stock_quantity <= 15) couleurBarre = '#f57c00'; 
+                else if (item.stock_quantity <= 15) couleurBarre = '#f57c00';
 
                 return (
                   <TouchableOpacity key={item.id} style={[styles.jumiaCard, { backgroundColor: isDarkMode ? '#1a1d21' : '#fff', borderColor: isDarkMode ? '#2d3139' : '#eee' }]} onPress={() => router.push(`/product/${item.id}`)}>
@@ -299,7 +315,7 @@ export default function HomeScreen() {
               })}
             </View>
 
-                         {renderProductRow("📱 Écrans Connectés", "phone", "#1072ba")}
+            {renderProductRow("📱 Écrans Connectés", "phone", "#1072ba")}
             {renderProductRow("🔥 Offres Phares Jula", "iphone", "#f57c00")}
             {renderProductRow("💻 Parcs Informatiques", "ordinateur", "#1072ba")}
           </View>
@@ -353,14 +369,12 @@ const styles = StyleSheet.create({
   searchResultsContainer: { paddingHorizontal: 16, marginTop: 15 },
   searchResultsTitle: { fontSize: 13, fontWeight: 'bold', marginBottom: 10, textTransform: 'uppercase' },
   noResultsTxt: { textAlign: 'center', color: '#7f8c8d', marginTop: 20 },
-  
-  /* 🎛️ COUCHE STYLES DE LA POP-UP MODALE FLASH */
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'center', alignItems: 'center', padding: 20 },
   modalCard: { width: '100%', maxWidth: 350, padding: 25, borderRadius: 16, borderWidth: 1, alignItems: 'center', position: 'relative' },
   closeAdButton: { position: 'absolute', top: -12, right: -12, backgroundColor: '#111417', borderRadius: 20, zIndex: 50 },
   modalAdBadge: { fontSize: 11, fontWeight: '800', letterSpacing: 1, marginBottom: 12, textAlign: 'center' },
   modalAdImage: { width: '100%', height: 180, borderRadius: 10, resizeMode: 'cover' },
-  modalAdTitle: { fontSize: 15, fontWeight: 'bold', marginVertical: 15, textAlign: 'center', lineHeight: 20 },
-  modalActionButton: { backgroundColor: '#f57c00', padding: 14, borderRadius: 8, width: '100%', alignItems: 'center' },
-  modalActionButtonText: { color: '#fff', fontWeight: 'bold', fontSize: 13 }
+modalAdTitle: { fontSize: 15, fontWeight: 'bold', marginVertical: 15, textAlign: 'center', lineHeight: 20 },
+modalActionButton: { backgroundColor: '#f57c00', padding: 14, borderRadius: 8, width: '100%', alignItems: 'center' },
+modalActionButtonText: { color: '#fff', fontWeight: 'bold', fontSize: 13 }
 });
