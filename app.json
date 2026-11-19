@@ -1,16 +1,27 @@
-  {
+   {
   "expo": {
     "name": "Jula",
     "slug": "jula",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
     "splash": {
       "image": "./assets/images/splash.png",
-      "resizeMode": "cover",
+      "resizeMode": "contain",
       "backgroundColor": "#f36c13"
     },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#f36c13",
+          "image": "./assets/images/splash.png",
+          "imageWidth": 180
+        }
+      ]
+    ],
     "assetBundlePatterns": [
       "**/*"
     ],
@@ -19,6 +30,10 @@
     },
     "android": {
       "package": "com.julaapp.jula",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/icon.png",
+        "backgroundColor": "#f36c13"
+      },
       "permissions": [
         "NOTIFICATIONS"
       ]
